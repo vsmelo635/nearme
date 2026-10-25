@@ -3,15 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>GoOut — eventos em Portugal</title>
-  <meta name="description" content="Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
-  <meta name="theme-color" content="#0b0b0d">
+  <title>Nearme — Mais que eventos. Experiências.</title>
+  <meta name="description" content="Mais que eventos. Experiências. Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
+  <meta name="theme-color" content="#FF6A13">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Ícones (separador do navegador e ecrã principal do telemóvel) -->
+  <link rel="icon" href="img/marca/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/marca/nearme-icone-laranja.png">
+
+  <!-- Open Graph: o "cartão" que aparece quando alguém partilha o link (WhatsApp, Facebook...) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Nearme">
+  <meta property="og:locale" content="pt_PT">
+  <meta property="og:url" content="https://nearme.pt/">
+  <meta property="og:title" content="Nearme — Mais que eventos. Experiências.">
+  <meta property="og:description" content="Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
+  <meta property="og:image" content="https://nearme.pt/img/marca/nearme-icone-laranja.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="Logótipo da Nearme">
 
   <!-- Fontes (Google Fonts, grátis) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Leaflet (biblioteca do mapa) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -24,16 +40,16 @@
 
   <!-- ===== TOPO ===== -->
   <header class="topo">
-    <a href="#inicio" class="logo" aria-label="GoOut — página inicial">
-      <!-- Se img/logo.png não existir, aparece o logótipo em texto logo abaixo -->
-      <!-- logo.png = texto claro (tema escuro) · logo-claro.png = texto escuro (tema claro) -->
+    <a href="#inicio" class="logo" aria-label="Nearme — página inicial">
+      <!-- Se a imagem do logo não carregar, aparece o logótipo em texto logo abaixo -->
+      <!-- escuro = texto branco (tema escuro) · claro = texto escuro (tema claro) -->
       <picture>
-        <source srcset="img/logo.png" media="(prefers-color-scheme: dark)">
-        <img src="img/logo-claro.png" alt="GoOut" class="logo-img">
+        <source srcset="img/marca/nearme-logo-horizontal-escuro.svg" media="(prefers-color-scheme: dark)">
+        <img src="img/marca/nearme-logo-horizontal-claro.svg" alt="Nearme" class="logo-img" width="362" height="100">
       </picture>
       <span class="logo-texto" aria-hidden="true">
-        <svg viewBox="0 0 24 24" class="logo-simbolo"><path d="M7 8a4 4 0 1 0 0 8c3 0 7-8 10-8a4 4 0 1 1 0 8c-3 0-7-8-10-8z"/></svg>
-        GOOUT
+        <svg viewBox="0 0 100 100" class="logo-simbolo"><path d="M57.42 82.15A33 33 0 1 1 82.75 45.98"/><circle cx="77.03" cy="68.93" r="9.3"/></svg>
+        nearme
       </span>
     </a>
     <a href="#novidades" class="botao-icone" aria-label="Receber novidades por e-mail">
@@ -76,7 +92,11 @@
       </div>
 
       <footer class="rodape">
-        <p>© <span id="ano"></span> GoOut · Feito em Portugal</p>
+        <picture>
+          <source srcset="img/marca/nearme-logo-vertical-escuro.svg" media="(prefers-color-scheme: dark)">
+          <img src="img/marca/nearme-logo-vertical-claro.svg" alt="Nearme — Mais que eventos. Experiências." class="rodape-logo" width="520" height="380" loading="lazy">
+        </picture>
+        <p>© <span id="ano"></span> Nearme · Feito em Portugal</p>
         <p><a href="#divulgar">Organizas eventos? Divulga aqui</a></p>
       </footer>
     </section>

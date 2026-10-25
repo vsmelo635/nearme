@@ -1,5 +1,5 @@
 /* =========================================================
-   GoOut — lógica do site (JavaScript puro, sem framework)
+   Nearme — lógica do site (JavaScript puro, sem framework)
    Arquivo: js/app.js
    ========================================================= */
 'use strict';
@@ -300,7 +300,7 @@ function renderHero() {
   const slideMarca = `
     <div class="slide slide-marca">
       <div class="slide-conteudo">
-        <span class="sobretitulo">Eventos em Portugal</span>
+        <span class="sobretitulo">Mais que eventos. Experiências.</span>
         <h1>Descobre<br>o que te move</h1>
         <p>Concertos, festas, cultura, gastronomia e desporto perto de ti — tudo num mapa.</p>
         <a href="#mapa" class="botao">Explorar no mapa ${icone('seta', 'icone-sm')}</a>
