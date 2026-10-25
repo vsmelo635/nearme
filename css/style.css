@@ -43,9 +43,6 @@
     --sombra: 0 6px 24px rgba(0, 0, 0, 0.45);
     color-scheme: dark;
   }
-  :root:not([data-theme="light"]) .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
-  }
 }
 :root[data-theme="dark"] {
   --fundo: #141414;
@@ -319,7 +316,8 @@ body[data-vista="mapa"] { padding-bottom: 0; }
   bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom));
 }
 #vista-mapa.ativa { display: block; }
-#mapa-leaflet { position: absolute; inset: 0; background: var(--superficie-2); }
+/* o mapa é sempre escuro (Dark Matter), nos dois temas */
+#mapa-leaflet { position: absolute; inset: 0; background: var(--marca-escuro); }
 .mapa-filtros {
   position: absolute; top: 8px; left: 0; right: 0; z-index: 500;
   display: flex; flex-direction: column; gap: 6px; pointer-events: none;
@@ -339,9 +337,34 @@ body[data-vista="mapa"] { padding-bottom: 0; }
   width: 18px; height: 18px; transform: rotate(45deg);
   fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
 }
-.leaflet-container { font-family: var(--fonte); }
-.leaflet-control-attribution { font-size: 10px; }
-.leaflet-control-attribution a { color: var(--laranja); }
+.leaflet-container { font-family: var(--fonte); background: var(--marca-escuro); }
+/* reserva sem chave da CARTO: escurece o mapa claro do OpenStreetMap */
+.mapa-escurecido { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
+
+/* controlos do Leaflet em versão escura (por cima do mapa escuro) */
+.leaflet-touch .leaflet-bar, .leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.leaflet-bar a, .leaflet-touch .leaflet-bar a {
+  width: 40px; height: 40px; line-height: 40px;
+  background: #1e1e1e; color: #fff; border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+.leaflet-bar a:hover, .leaflet-bar a:focus { background: #292929; color: var(--laranja); }
+.leaflet-bar a.leaflet-disabled { background: #1e1e1e; color: #5c5c5c; }
+
+.leaflet-container .leaflet-control-attribution {
+  font-size: 10px; background: rgba(20, 20, 20, 0.75); color: #A3A3A3;
+}
+.leaflet-container .leaflet-control-attribution a { color: var(--laranja); }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #1e1e1e; color: #fff; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-content-wrapper { border-radius: var(--raio-sm); }
+.leaflet-popup-content a { color: var(--laranja); }
+.leaflet-container a.leaflet-popup-close-button { color: #A3A3A3; }
+.leaflet-container a.leaflet-popup-close-button:hover { color: var(--laranja); }
 
 /* ---------- 14. Formulários ---------- */
 .painel-form {

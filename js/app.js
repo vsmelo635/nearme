@@ -15,6 +15,10 @@ const CONFIG = {
   // Enquanto estiver vazio, o site usa o arquivo data/eventos.json.
   PLANILHA_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRqkrPJmHQ81SsNhxyRZjhn0v8w65g-je3JUK2V0GSU9zZ8ZYcHQ_fp8WVoxr1Ef1xyE1kmJ35hRrrp/pub?gid=0&single=true&output=csv',
 
+  // Chave grátis do mapa escuro "Dark Matter" da CARTO (pedir em https://carto.com/basemaps/apikey).
+  // Enquanto estiver vazio, o site usa o mapa do OpenStreetMap escurecido.
+  CARTO_CHAVE: '',
+
   EVENTOS_URL: 'data/eventos.json',
   CENTRO_PORTUGAL: [39.7, -8.3],
   ZOOM_INICIAL: 7,
@@ -424,10 +428,21 @@ function iniciarMapa() {
 
   mapa = L.map('mapa-leaflet', { zoomControl: false }).setView(CONFIG.CENTRO_PORTUGAL, CONFIG.ZOOM_INICIAL);
   L.control.zoom({ position: 'bottomright' }).addTo(mapa);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  }).addTo(mapa);
+  const osm = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+  if (CONFIG.CARTO_CHAVE) {
+    // Mapa escuro "Dark Matter" da CARTO (exige manter a atribuição)
+    L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(CONFIG.CARTO_CHAVE)}`, {
+      maxZoom: 20,
+      attribution: `${osm} &copy; <a href="https://carto.com/attributions">CARTO</a>`,
+    }).addTo(mapa);
+  } else {
+    // Sem chave da CARTO: mapa do OpenStreetMap com as cores invertidas pelo CSS (.mapa-escurecido)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      className: 'mapa-escurecido',
+      attribution: osm,
+    }).addTo(mapa);
+  }
 
   camadaMarcadores = L.layerGroup().addTo(mapa);
   desenharMarcadores();
