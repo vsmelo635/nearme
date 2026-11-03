@@ -10,7 +10,10 @@
 
   <!-- Ícones (separador do navegador e ecrã principal do telemóvel) -->
   <link rel="icon" href="img/marca/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="img/marca/nearme-icone-laranja.png">
+  <link rel="apple-touch-icon" href="img/marca/nearme-icone-180.png">
+
+  <!-- Endereço oficial: diz ao Google que o site "verdadeiro" é o www.nearme.pt (e não o .vercel.app) -->
+  <link rel="canonical" href="https://www.nearme.pt/">
 
   <!-- Open Graph: o "cartão" que aparece quando alguém partilha o link (WhatsApp, Facebook...) -->
   <meta property="og:type" content="website">
@@ -19,21 +22,16 @@
   <meta property="og:url" content="https://www.nearme.pt/">
   <meta property="og:title" content="Nearme — Mais que eventos. Experiências.">
   <meta property="og:description" content="Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
-  <meta property="og:image" content="https://www.nearme.pt/img/marca/nearme-icone-laranja.png">
-  <meta property="og:image:width" content="512">
-  <meta property="og:image:height" content="512">
-  <meta property="og:image:alt" content="Logótipo da Nearme">
+  <meta property="og:image" content="https://www.nearme.pt/img/marca/nearme-partilha.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Nearme — Mais que eventos. Experiências.">
+  <meta name="twitter:card" content="summary_large_image">
 
-  <!-- Fontes (Google Fonts, grátis) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Fonte: arquivo próprio (fonts/), carregado logo no início para o texto não "piscar" -->
+  <link rel="preload" href="fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
 
-  <!-- Leaflet (biblioteca do mapa) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous">
-
-  <!-- Nosso estilo -->
+  <!-- Nosso estilo. O Leaflet (mapa) só é carregado quando a pessoa abre o Mapa (ver js/app.js) -->
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-vista="inicio">
@@ -227,9 +225,6 @@
     </article>
   </div>
 
-  <!-- integrity = "impressão digital" do arquivo: se alguém alterar o Leaflet no servidor, o navegador recusa -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
   <script src="js/app.js"></script>
   <!-- Vercel Web Analytics: conta as visitas (sem cookies) -->
   <script defer src="/_vercel/insights/script.js"></script>

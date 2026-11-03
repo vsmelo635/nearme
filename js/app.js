@@ -210,40 +210,65 @@ async function obterDados() {
   return resposta.json();
 }
 
+/* Cópia dos eventos guardada no navegador (localStorage).
+   Na visita seguinte o site mostra essa cópia NA HORA e, quando a planilha chega, troca pela versão nova. */
+const CHAVE_CACHE = 'nearme-eventos-v1';
+
+function lerCache() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem(CHAVE_CACHE));
+    return Array.isArray(guardado?.dados) ? guardado.dados : null;
+  } catch (_) { return null; } // modo privado ou dados estragados: ignora
+}
+
+function guardarCache(dados) {
+  try { localStorage.setItem(CHAVE_CACHE, JSON.stringify({ guardadoEm: Date.now(), dados })); }
+  catch (_) { /* sem espaço ou modo privado: não faz mal */ }
+}
+
 const VALORES_SIM = ['sim', 's', 'true', 'verdadeiro', 'x', '1'];
 
+// Transforma as linhas da planilha/JSON em eventos prontos a usar
+function prepararEventos(dados) {
+  const agora = new Date();
+
+  return dados
+    .filter(e => e && String(e.nome || '').trim())  // linha sem nome = ignorada
+    .map((e, i) => {
+      const inicio = lerData(e.data_inicio);
+      // se não tiver data_fim, consideramos 3 horas de duração
+      const fim = lerData(e.data_fim) || (inicio ? new Date(inicio.getTime() + 3 * 36e5) : null);
+      const cat = CATEGORIAS.find(c => normalizar(c.id) === normalizar(e.categoria));
+      return {
+        ...e,
+        id: String(e.id || '').trim() || 'linha-' + (i + 2), // sem id? usa o número da linha
+        categoria: cat ? cat.id : 'outros',
+        inicio,
+        fim,
+        lat: lerNumero(e.latitude),
+        lng: lerNumero(e.longitude),
+        destaque: e.destaque === true || VALORES_SIM.includes(normalizar(e.destaque)),
+      };
+    })
+    // tira eventos sem data, sem coordenadas ou que já acabaram
+    .filter(e => {
+      const valido = e.inicio && e.fim && !isNaN(e.lat) && !isNaN(e.lng);
+      if (!valido) console.warn('Evento ignorado (falta data ou localização):', e.nome);
+      return valido && e.fim >= agora;
+    })
+    .sort((a, b) => a.inicio - b.inicio);
+}
+
+// Busca a versão nova dos eventos (planilha ou eventos.json) e guarda a cópia
 async function carregarEventos() {
   try {
     const dados = await obterDados();
-    const agora = new Date();
-
-    eventos = dados
-      .filter(e => e && String(e.nome || '').trim())  // linha sem nome = ignorada
-      .map((e, i) => {
-        const inicio = lerData(e.data_inicio);
-        // se não tiver data_fim, consideramos 3 horas de duração
-        const fim = lerData(e.data_fim) || (inicio ? new Date(inicio.getTime() + 3 * 36e5) : null);
-        const cat = CATEGORIAS.find(c => normalizar(c.id) === normalizar(e.categoria));
-        return {
-          ...e,
-          id: String(e.id || '').trim() || 'linha-' + (i + 2), // sem id? usa o número da linha
-          categoria: cat ? cat.id : 'outros',
-          inicio,
-          fim,
-          lat: lerNumero(e.latitude),
-          lng: lerNumero(e.longitude),
-          destaque: e.destaque === true || VALORES_SIM.includes(normalizar(e.destaque)),
-        };
-      })
-      // tira eventos sem data, sem coordenadas ou que já acabaram
-      .filter(e => {
-        const valido = e.inicio && e.fim && !isNaN(e.lat) && !isNaN(e.lng);
-        if (!valido) console.warn('Evento ignorado (falta data ou localização):', e.nome);
-        return valido && e.fim >= agora;
-      })
-      .sort((a, b) => a.inicio - b.inicio);
+    eventos = prepararEventos(dados);
+    erroAoCarregar = false;
+    guardarCache(dados);
   } catch (erro) {
-    erroAoCarregar = true;
+    // só mostra erro se também não houver cópia guardada para mostrar
+    if (!eventos.length) erroAoCarregar = true;
     console.error('Não foi possível carregar os eventos:', erro);
     console.info('Dica: abra o site com o Live Server do VS Code (não dê duplo clique no index.html).');
   }
@@ -343,10 +368,21 @@ function renderHero() {
     </div>`);
 
   const slides = [slideMarca, ...destaques];
-  trilho.innerHTML = slides.join('');
+  const html = slides.join('');
+  if (trilho.dataset.html === html) return; // nada mudou: não mexe (evita "saltar" o carrossel)
+  trilho.dataset.html = html;
+  trilho.innerHTML = html;
+  trilho.scrollLeft = 0;
   pontos.innerHTML = slides.length > 1
     ? slides.map((_, i) => `<span class="ponto ${i === 0 ? 'ativo' : ''}"></span>`).join('')
     : '';
+}
+
+// Bolinhas e passagem automática do carrossel do topo (liga só uma vez)
+function iniciarHero() {
+  const trilho = document.getElementById('hero-trilho');
+  const pontos = document.getElementById('hero-pontos');
+  const total = () => trilho.children.length;
 
   // atualiza as bolinhas quando o usuário desliza
   trilho.addEventListener('scroll', () => {
@@ -356,16 +392,15 @@ function renderHero() {
 
   // passa sozinho a cada 6 segundos (para quando o usuário toca)
   const reduzirMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (slides.length > 1 && !reduzirMovimento) {
-    let pausado = false;
-    trilho.addEventListener('pointerdown', () => { pausado = true; });
-    setInterval(() => {
-      if (pausado || document.hidden || document.body.dataset.vista !== 'inicio') return;
-      const atual = Math.round(trilho.scrollLeft / trilho.clientWidth);
-      const proximo = (atual + 1) % slides.length;
-      trilho.scrollTo({ left: proximo * trilho.clientWidth, behavior: 'smooth' });
-    }, 6000);
-  }
+  if (reduzirMovimento) return;
+  let pausado = false;
+  trilho.addEventListener('pointerdown', () => { pausado = true; });
+  setInterval(() => {
+    if (pausado || total() < 2 || document.hidden || document.body.dataset.vista !== 'inicio') return;
+    const atual = Math.round(trilho.scrollLeft / trilho.clientWidth);
+    const proximo = (atual + 1) % total();
+    trilho.scrollTo({ left: proximo * trilho.clientWidth, behavior: 'smooth' });
+  }, 6000);
 }
 
 function renderCategorias() {
@@ -469,6 +504,49 @@ function mudarPagina(passo) {
 }
 
 /* ---------- 7. MAPA (Leaflet) ---------- */
+/* O Leaflet (~150 KB) só é baixado quando a pessoa abre o Mapa (ou passa o dedo/rato por cima do botão "Mapa").
+   integrity = "impressão digital" do arquivo: se alguém alterar o Leaflet no servidor, o navegador recusa. */
+const LEAFLET = {
+  css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+  cssHash: 'sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H',
+  js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  jsHash: 'sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH',
+};
+let promessaLeaflet = null;
+
+function carregarLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (promessaLeaflet) return promessaLeaflet; // já está a ser baixado
+  promessaLeaflet = new Promise((resolve, reject) => {
+    const css = document.createElement('link');
+    Object.assign(css, { rel: 'stylesheet', href: LEAFLET.css, integrity: LEAFLET.cssHash, crossOrigin: 'anonymous' });
+    document.head.appendChild(css);
+
+    const js = document.createElement('script');
+    Object.assign(js, { src: LEAFLET.js, integrity: LEAFLET.jsHash, crossOrigin: 'anonymous' });
+    js.onload = () => resolve();
+    js.onerror = () => { promessaLeaflet = null; reject(new Error('Leaflet não carregou')); };
+    document.head.appendChild(js);
+  });
+  return promessaLeaflet;
+}
+
+async function abrirMapa() {
+  const caixa = document.getElementById('mapa-leaflet');
+  if (!window.L) caixa.dataset.estado = 'a-carregar';
+  try {
+    await carregarLeaflet();
+    caixa.dataset.estado = '';
+  } catch (erro) {
+    console.error(erro);
+    caixa.dataset.estado = 'erro';
+    return;
+  }
+  if (document.body.dataset.vista !== 'mapa') return; // a pessoa já saiu do mapa
+  iniciarMapa();
+  requestAnimationFrame(ajustarMapa);
+}
+
 function iniciarMapa() {
   if (mapa || typeof L === 'undefined') return;
 
@@ -593,10 +671,7 @@ function mostrarVista() {
   document.body.dataset.vista = vista;
   window.scrollTo(0, 0);
 
-  if (vista === 'mapa') {
-    iniciarMapa();
-    requestAnimationFrame(ajustarMapa);
-  }
+  if (vista === 'mapa') abrirMapa();
 }
 
 /* ---------- 10. ATUALIZAR TUDO QUANDO UM FILTRO MUDA ---------- */
@@ -638,23 +713,74 @@ async function enviarFormulario(ev) {
 
   botao.disabled = true;
   botao.textContent = 'A enviar…';
-  try {
-    // Envia para o Google Apps Script, que grava uma linha na aba "Leads".
-    // mode 'no-cors': o Google não deixa ler a resposta, mas o envio chega.
-    await fetch(CONFIG.LEADS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: new URLSearchParams(dados),
-    });
+  const resultado = await enviarLead(dados);
+  botao.disabled = false;
+  botao.textContent = botao.dataset.texto;
+
+  if (resultado === 'ok') {
     form.reset();
     mostrarMensagem(msg, form.dataset.sucesso, 'ok');
-  } catch (erro) {
-    console.error(erro);
-    mostrarMensagem(msg, 'Ups, algo correu mal. Tenta novamente daqui a pouco.', 'erro');
-  } finally {
-    botao.disabled = false;
-    botao.textContent = botao.dataset.texto;
+  } else {
+    // Não chegou: guarda no navegador e tenta de novo sozinho (ao voltar a internet ou na próxima visita)
+    guardarLeadPendente(dados);
+    mostrarMensagem(msg, 'Não conseguimos enviar agora. Guardámos os teus dados e tentamos de novo automaticamente.', 'aviso');
+    form.reset();
   }
+}
+
+/* Envia um lead para o Google Apps Script (grava uma linha na aba "Leads").
+   Devolve 'ok' quando temos a certeza ou boa razão para crer que chegou, ou 'falhou' quando de certeza não chegou. */
+async function enviarLead(dados) {
+  if (!navigator.onLine) return 'falhou';              // sem internet: nem tenta
+  const controlo = new AbortController();
+  const limite = setTimeout(() => controlo.abort(), 15000); // desiste ao fim de 15 segundos
+  try {
+    // Pedido "normal" (sem no-cors): assim conseguimos ver se o Google respondeu com erro.
+    const resposta = await fetch(CONFIG.LEADS_URL, {
+      method: 'POST',
+      body: new URLSearchParams(dados),
+      signal: controlo.signal,
+    });
+    return resposta.ok ? 'ok' : 'falhou';               // ex.: 404 ou 500 = não gravou
+  } catch (erro) {
+    if (erro.name === 'AbortError') return 'falhou';    // demorou demais
+    // Outro erro com internet ligada: normalmente é o Google não deixar LER a resposta (CORS),
+    // mas o pedido chega e a linha é gravada. Por isso contamos como enviado.
+    console.warn('Lead enviado, mas sem confirmação do Google:', erro);
+    return 'ok';
+  } finally {
+    clearTimeout(limite);
+  }
+}
+
+/* Leads que não chegaram ficam guardados aqui até conseguirmos enviar */
+const CHAVE_LEADS = 'nearme-leads-pendentes';
+
+function lerLeadsPendentes() {
+  try { return JSON.parse(localStorage.getItem(CHAVE_LEADS)) || []; } catch (_) { return []; }
+}
+function gravarLeadsPendentes(lista) {
+  try {
+    if (lista.length) localStorage.setItem(CHAVE_LEADS, JSON.stringify(lista));
+    else localStorage.removeItem(CHAVE_LEADS);
+  } catch (_) { /* modo privado: não dá para guardar */ }
+}
+function guardarLeadPendente(dados) {
+  gravarLeadsPendentes([...lerLeadsPendentes(), dados].slice(-20)); // no máximo 20
+}
+
+let enviandoPendentes = false;
+async function reenviarLeadsPendentes() {
+  if (enviandoPendentes || !CONFIG.LEADS_URL) return;
+  const pendentes = lerLeadsPendentes();
+  if (!pendentes.length) return;
+  enviandoPendentes = true;
+  const ficam = [];
+  for (const lead of pendentes) {
+    if ((await enviarLead(lead)) !== 'ok') ficam.push(lead);
+  }
+  gravarLeadsPendentes(ficam);
+  enviandoPendentes = false;
 }
 
 function mostrarMensagem(el, texto, tipo) {
@@ -766,10 +892,33 @@ async function iniciar() {
     form.addEventListener('submit', enviarFormulario);
   });
 
+  iniciarHero();
   mostrarVista();
+
+  // 1) mostra já a cópia guardada da última visita (se houver)...
+  const copia = lerCache();
+  if (copia) {
+    eventos = prepararEventos(copia);
+    renderHero();
+    atualizar();
+  }
+  // 2) ...e depois troca pela versão nova da planilha, sem perder a página do carrossel nem a busca
+  const paginaAntes = pagina;
   await carregarEventos();
   renderHero();
   atualizar();
+  if (copia) { pagina = paginaAntes; renderLista(); }
+
+  // leads que ficaram por enviar numa visita anterior
+  reenviarLeadsPendentes();
+  window.addEventListener('online', reenviarLeadsPendentes);
 }
+
+// Começa a baixar o mapa assim que a pessoa aponta/toca num link para o Mapa (abre mais rápido)
+['pointerover', 'touchstart', 'focusin'].forEach(tipo => {
+  document.addEventListener(tipo, ev => {
+    if (ev.target.closest?.('a[href="#mapa"]')) carregarLeaflet().catch(() => {});
+  }, { passive: true });
+});
 
 iniciar();
