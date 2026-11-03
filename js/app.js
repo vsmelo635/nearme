@@ -63,8 +63,11 @@ function icone(nome, classe = '') {
 }
 
 /* ---------- 2. ESTADO (o que o usuário escolheu) ---------- */
-const ESTADO_INICIAL = { categoria: 'todas', quando: 'todos', data: '', cidade: 'todas' };
+const ESTADO_INICIAL = { categoria: 'todas', quando: 'todos', data: '', cidade: 'todas', busca: '' };
 let estado = { ...ESTADO_INICIAL };
+
+const POR_PAGINA = 5;  // quantos eventos aparecem de cada vez no carrossel
+let pagina = 0;        // página atual do carrossel (0 = primeira)
 let eventos = [];     // todos os eventos futuros
 let filtrados = [];   // eventos que passam nos filtros
 let erroAoCarregar = false;
@@ -173,6 +176,13 @@ function textoData(e) {
   return `De ${fmtDiaCurto.format(e.inicio)} a ${fmtDiaCurto.format(e.fim)} · ${fmtHora.format(e.inicio)} – ${fmtHora.format(e.fim)}`;
 }
 
+// Data que aparece no selo do cartão: se o evento dura vários dias e já começou,
+// mostra o dia de hoje (ex.: semana inteira de 29/10 a 5/11 -> hoje mostra "3 NOV")
+function dataDoSelo(e) {
+  const hoje = new Date();
+  return (e.inicio < inicioDoDia(hoje) && e.fim >= hoje) ? hoje : e.inicio;
+}
+
 // Texto curto (usado no cartão), ex.: "Sáb · 21:00"
 function textoDataCurta(e) {
   const hoje = new Date();
@@ -263,12 +273,21 @@ function intervaloDatas() {
   return [null, null];
 }
 
+// O texto da busca precisa aparecer no nome, local, cidade ou categoria (sem ligar a acentos)
+function passaNaBusca(e) {
+  const termo = normalizar(estado.busca);
+  if (!termo) return true;
+  const texto = normalizar([e.nome, e.local_nome, e.cidade, categoriaDe(e.categoria).nome, e.descricao].join(' '));
+  return termo.split(/\s+/).every(palavra => texto.includes(palavra));
+}
+
 function filtrar() {
   const [ini, fim] = intervaloDatas();
   return eventos.filter(e =>
     (estado.categoria === 'todas' || e.categoria === estado.categoria) &&
     (estado.cidade === 'todas' || e.cidade === estado.cidade) &&
-    (!ini || (e.fim >= ini && e.inicio <= fim))
+    (!ini || (e.fim >= ini && e.inicio <= fim)) &&
+    passaNaBusca(e)
   );
 }
 
@@ -285,10 +304,11 @@ function capa(e) {
 
 function cartaoEvento(e) {
   const cat = categoriaDe(e.categoria);
+  const dia = dataDoSelo(e);
   return `
     <button type="button" class="cartao" data-id="${esc(e.id)}" aria-label="${esc(e.nome)}">
       ${capa(e)}
-      <span class="selo-data"><b>${e.inicio.getDate()}</b><small>${semPonto(fmtMes.format(e.inicio)).toUpperCase()}</small></span>
+      <span class="selo-data"><b>${dia.getDate()}</b><small>${semPonto(fmtMes.format(dia)).toUpperCase()}</small></span>
       <span class="cartao-info">
         <h3>${esc(e.nome)}</h3>
         <p>${esc(e.local_nome)} · ${esc(e.cidade)}</p>
@@ -401,6 +421,8 @@ function renderFiltrosData() {
 function renderLista() {
   const lista = document.getElementById('lista-eventos');
   const contador = document.getElementById('contador');
+  const nav = document.getElementById('carrossel-nav');
+  nav.hidden = true;
 
   if (erroAoCarregar) {
     contador.textContent = '';
@@ -411,15 +433,39 @@ function renderLista() {
   contador.textContent = `(${filtrados.length})`;
 
   if (!filtrados.length) {
+    const msg = estado.busca
+      ? `Nenhum evento encontrado para “${esc(estado.busca)}”.`
+      : 'Não encontrámos eventos com estes filtros.';
     lista.innerHTML = `
       <div class="vazio">
-        <p>Não encontrámos eventos com estes filtros.</p>
+        <p>${msg}</p>
         <button type="button" class="botao botao-sec" data-limpar>Limpar filtros</button>
       </div>`;
     return;
   }
 
-  lista.innerHTML = filtrados.map(cartaoEvento).join('');
+  // Carrossel: mostra só 5 eventos da página atual
+  const totalPaginas = Math.ceil(filtrados.length / POR_PAGINA);
+  pagina = Math.min(Math.max(pagina, 0), totalPaginas - 1);
+  const inicio = pagina * POR_PAGINA;
+  lista.innerHTML = filtrados.slice(inicio, inicio + POR_PAGINA).map(cartaoEvento).join('');
+  lista.scrollLeft = 0; // no telemóvel, volta ao primeiro cartão da página
+
+  if (totalPaginas > 1) {
+    nav.hidden = false;
+    document.getElementById('pagina-info').textContent = `${pagina + 1} / ${totalPaginas}`;
+    nav.querySelector('[data-pagina="-1"]').disabled = pagina === 0;
+    nav.querySelector('[data-pagina="1"]').disabled = pagina === totalPaginas - 1;
+  }
+}
+
+// Setas do carrossel: anda uma página para trás (-1) ou para a frente (+1)
+function mudarPagina(passo) {
+  pagina += passo;
+  renderLista();
+  // se a lista ficou fora do ecrã, traz de volta ao título "Próximos eventos"
+  const titulo = document.getElementById('contador').closest('.secao-titulo');
+  if (titulo.getBoundingClientRect().top < 0) titulo.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ---------- 7. MAPA (Leaflet) ---------- */
@@ -556,6 +602,7 @@ function mostrarVista() {
 /* ---------- 10. ATUALIZAR TUDO QUANDO UM FILTRO MUDA ---------- */
 function atualizar() {
   filtrados = filtrar();
+  pagina = 0; // filtro novo -> carrossel volta ao início
   renderCategorias();
   renderFiltrosData();
   renderLista();
@@ -617,8 +664,10 @@ function mostrarMensagem(el, texto, tipo) {
 
 /* ---------- 12. CLIQUES E EVENTOS ---------- */
 document.addEventListener('click', ev => {
-  const alvo = ev.target.closest('[data-id], [data-categoria], [data-quando], [data-limpar], [data-fechar], [data-ver-mapa], .input-data');
+  const alvo = ev.target.closest('[data-id], [data-categoria], [data-quando], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
   if (!alvo) return;
+
+  if (alvo.dataset.pagina) { mudarPagina(Number(alvo.dataset.pagina)); return; }
 
   if (alvo.matches('.input-data')) {
     try { alvo.showPicker(); } catch (_) { /* navegadores antigos abrem sozinhos */ }
@@ -649,7 +698,30 @@ document.addEventListener('click', ev => {
   }
   if (alvo.hasAttribute('data-limpar')) {
     estado = { ...ESTADO_INICIAL };
+    document.getElementById('busca').value = '';
     atualizar();
+  }
+});
+
+/* Barra de busca: filtra enquanto a pessoa escreve */
+const campoBusca = document.getElementById('busca');
+if (window.matchMedia('(max-width: 480px)').matches) campoBusca.placeholder = 'Procurar'; // texto curto no telemóvel
+let esperaBusca = null;
+campoBusca.addEventListener('input', () => {
+  clearTimeout(esperaBusca);
+  esperaBusca = setTimeout(() => {   // espera 200 ms para não refazer a lista a cada letra
+    estado.busca = campoBusca.value.trim();
+    atualizar();
+    // se estiver em "Novidades" ou "Divulgar", volta ao início para ver os resultados
+    if (estado.busca && !['inicio', 'mapa'].includes(document.body.dataset.vista)) location.hash = 'inicio';
+  }, 200);
+});
+// Enter: esconde o teclado do telemóvel e leva até a lista de eventos
+document.getElementById('form-busca').addEventListener('submit', ev => {
+  ev.preventDefault();
+  campoBusca.blur();
+  if (document.body.dataset.vista === 'inicio') {
+    document.getElementById('contador').closest('.secao-titulo').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 });
 

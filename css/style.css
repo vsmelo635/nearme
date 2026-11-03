@@ -111,8 +111,36 @@ img { display: block; max-width: 100%; }
 .logo-simbolo path { fill: none; stroke: var(--laranja); stroke-width: 15; stroke-linecap: round; }
 .logo-simbolo circle { fill: var(--laranja); }
 
+/* Barra de busca no cabeçalho (entre o logo e o sininho) */
+.topo { gap: 10px; }
+.logo { flex-shrink: 0; }
+.busca {
+  flex: 1 1 auto; max-width: 420px; margin-left: auto;
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  height: 42px; padding: 0 14px;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 999px;
+  color: var(--texto-2);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca:focus-within { border-color: var(--laranja); box-shadow: 0 0 0 3px var(--laranja-suave); }
+.busca .icone { color: var(--laranja); }
+.busca input {
+  flex: 1; min-width: 0; height: 100%; padding: 0;
+  border: 0; background: none; outline: none;
+  font-size: 16px; /* 16px evita o zoom automático no iPhone */
+  color: var(--texto);
+}
+.busca input, .busca input:focus { min-height: 0; border-radius: 0; outline: none; }
+.busca input::placeholder { color: var(--texto-2); }
+/* telemóvel: logo um pouco menor para sobrar espaço para a busca */
+@media (max-width: 480px) {
+  .logo, .logo-img { height: 32px; }
+  .busca { padding: 0 12px; }
+}
+.busca input::-webkit-search-cancel-button { cursor: pointer; }
+
 .botao-icone {
-  position: relative; width: 44px; height: 44px;
+  position: relative; width: 44px; height: 44px; flex-shrink: 0;
   display: grid; place-items: center; border-radius: 50%;
 }
 .botao-icone:hover { background: var(--superficie-2); }
@@ -130,6 +158,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 .secao-titulo {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin: 26px 0 12px;
+  scroll-margin-top: calc(var(--altura-topo) + 12px); /* não fica escondido debaixo do topo */
 }
 .secao-titulo h2 { font-size: 1.15rem; font-weight: 700; }
 .contador { font-size: 0.85rem; font-weight: 500; color: var(--texto-2); margin-left: 4px; }
@@ -261,7 +290,32 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 }
 
 /* ---------- 11. Cartões de evento ---------- */
-.grelha-eventos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+/* Carrossel "Próximos eventos": 5 cartões por página.
+   No telemóvel ficam numa fila que se arrasta com o dedo; no computador cabem os 5 lado a lado. */
+.carrossel-eventos {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 44%; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: 0 -16px; padding: 2px 16px 6px; scroll-padding: 0 16px;
+}
+.carrossel-eventos::-webkit-scrollbar { display: none; }
+.carrossel-eventos .cartao { scroll-snap-align: start; }
+/* mensagem "a carregar" ou "nenhum evento" ocupa a largura toda */
+.carrossel-eventos:has(> .vazio), .carrossel-eventos:has(> .carregando) { display: block; }
+
+.carrossel-nav {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 14px;
+}
+.seta-nav {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 1px solid var(--borda); border-radius: 50%;
+  background: var(--superficie); color: var(--laranja); box-shadow: var(--sombra);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.seta-nav:hover:not(:disabled) { background: var(--laranja); color: #fff; }
+.seta-nav:active:not(:disabled) { transform: scale(0.94); }
+.seta-nav:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+.pagina-info { min-width: 56px; text-align: center; font-size: 0.875rem; font-weight: 600; color: var(--texto-2); font-variant-numeric: tabular-nums; }
 
 .cartao {
   position: relative; display: block; width: 100%;
@@ -442,7 +496,7 @@ form .botao { margin-top: 6px; }
 
 /* ---------- 17. Ecrãs maiores (tablet / computador) ---------- */
 @media (min-width: 700px) {
-  .grelha-eventos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .carrossel-eventos { grid-auto-columns: 30%; gap: 14px; margin: 0; padding-left: 0; padding-right: 0; scroll-padding: 0; }
   .slide { min-height: 300px; padding: 36px 36px 48px; }
   .categorias { margin: 0; padding-left: 0; padding-right: 0; grid-auto-columns: 84px; }
   .chips { margin: 0; padding-left: 0; padding-right: 0; }
@@ -462,7 +516,8 @@ form .botao { margin-top: 6px; }
 }
 
 @media (min-width: 1000px) {
-  .grelha-eventos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* computador: os 5 eventos da página cabem todos lado a lado */
+  .carrossel-eventos { grid-auto-flow: row; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
   /* no computador o menu vira uma "pílula" flutuante */
   .nav-baixo {
     left: 50%; right: auto; bottom: 16px; width: 440px; height: 64px;
