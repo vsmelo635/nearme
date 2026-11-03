@@ -19,3 +19,6 @@ WhatsApp Image*
 backup-*.csv
 *.xlsx
 COMO-ADICIONAR-EVENTOS.md
+
+.vercel
+.env*
