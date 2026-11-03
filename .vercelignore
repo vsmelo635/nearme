@@ -14,3 +14,6 @@ COMO-ADICIONAR-EVENTOS.md
 # Prévias do logo (não são usadas no site)
 img/nearme-logo-preview.png
 img/marca/nearme-logo-preview.png
+
+# Código do Apps Script (é colado na planilha, não faz parte do site)
+apps-script/

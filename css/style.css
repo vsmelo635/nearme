@@ -71,7 +71,12 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* ao saltar para um elemento, ele não fica escondido atrás do topo nem do menu de baixo */
+  scroll-padding-top: calc(var(--altura-topo) + 12px);
+  scroll-padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 24px);
+}
 
 body {
   margin: 0;
@@ -197,6 +202,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 /* ---------- 7. Carrossel (hero) ---------- */
 .hero { position: relative; margin-top: 8px; }
 .hero-trilho {
+  min-height: 240px; /* guarda o espaço do carrossel enquanto carrega */
   display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
   border-radius: var(--raio); scrollbar-width: none;
 }
@@ -361,6 +367,14 @@ main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
 .cartao-info p { font-size: 0.72rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cartao-info .meta { font-weight: 600; opacity: 1; margin-top: 2px; }
 
+/* cartões "fantasma" enquanto carrega: brilho a passar */
+.cartao.esqueleto {
+  background: linear-gradient(100deg, var(--superficie-2) 30%, var(--superficie) 50%, var(--superficie-2) 70%);
+  background-size: 300% 100%; animation: brilho 1.4s ease-in-out infinite; box-shadow: none;
+}
+@keyframes brilho { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 .carregando, .vazio { grid-column: 1 / -1; padding: 32px 16px; text-align: center; color: var(--texto-2); }
 .vazio .botao { margin-top: 12px; }
 
@@ -465,6 +479,14 @@ body[data-vista="mapa"] { padding-bottom: 0; }
   fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
 }
 .leaflet-container { font-family: var(--fonte); background: var(--marca-escuro); }
+/* círculo que junta vários pinos (o número é quantos eventos há ali) */
+.grupo-marcadores { background: none; border: 0; }
+.grupo-marcadores span {
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--laranja); background-image: var(--degrade); color: #fff;
+  font-weight: 800; font-size: 0.95rem;
+  border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(255, 106, 19, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
 /* reserva sem chave da CARTO: escurece o mapa claro do OpenStreetMap */
 .mapa-escurecido { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
 
@@ -585,6 +607,7 @@ form .botao { margin-top: 6px; }
 @media (min-width: 700px) {
   .carrossel-eventos { grid-auto-columns: 30%; gap: 14px; margin: 0; padding-left: 0; padding-right: 0; scroll-padding: 0; }
   .slide { min-height: 300px; padding: 36px 36px 48px; }
+  .hero-trilho { min-height: 300px; }
   .categorias { margin: 0; padding-left: 0; padding-right: 0; grid-auto-columns: 84px; }
   .chips { margin: 0; padding-left: 0; padding-right: 0; }
   .folha-painel {
@@ -612,6 +635,9 @@ form .botao { margin-top: 6px; }
     border: 1px solid var(--borda); border-radius: 999px; box-shadow: var(--sombra);
   }
   #vista-mapa { bottom: 0; }
+  /* o menu flutuante ocupa 64px + 16px de margem: deixa espaço para o fim da página não ficar por baixo dele */
+  body { padding-bottom: 112px; }
+  body[data-vista="mapa"] { padding-bottom: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

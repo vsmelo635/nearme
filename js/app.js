@@ -320,11 +320,20 @@ function filtrar() {
 
 /* ---------- 6. DESENHAR A TELA ---------- */
 
+// Links do Google Drive viram um link direto da imagem (a foto tem de estar partilhada como
+// "Qualquer pessoa com o link"). Outros links ficam iguais.
+function urlImagem(link) {
+  const texto = String(link || '').trim();
+  const drive = texto.match(/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{20,})/);
+  return drive ? `https://lh3.googleusercontent.com/d/${drive[1]}` : texto;
+}
+
 // Capa: cor da categoria + ícone; se tiver imagem, ela fica por cima
 function capa(e) {
   const cat = categoriaDe(e.categoria);
-  const img = linkSeguro(e.imagem_url)
-    ? `<img src="${esc(e.imagem_url)}" alt="" loading="lazy">`
+  const url = linkSeguro(urlImagem(e.imagem_url));
+  const img = url
+    ? `<img src="${esc(url)}" alt="" loading="lazy">`
     : '';
   return `<div class="capa" data-cat="${esc(e.categoria)}">${icone(cat.icone, 'capa-icone')}${img}</div>`;
 }
@@ -574,23 +583,38 @@ const LEAFLET = {
   cssHash: 'sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H',
   js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   jsHash: 'sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH',
+  // Leaflet.markercluster: junta pinos próximos num círculo com o número de eventos
+  grupoCss: 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css',
+  grupoCssHash: 'sha384-pmjIAcz2bAn0xukfxADbZIb3t8oRT9Sv0rvO+BR5Csr6Dhqq+nZs59P0pPKQJkEV',
+  grupoJs: 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+  grupoJsHash: 'sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr',
 };
 let promessaLeaflet = null;
 
-function carregarLeaflet() {
-  if (window.L) return Promise.resolve();
-  if (promessaLeaflet) return promessaLeaflet; // já está a ser baixado
-  promessaLeaflet = new Promise((resolve, reject) => {
-    const css = document.createElement('link');
-    Object.assign(css, { rel: 'stylesheet', href: LEAFLET.css, integrity: LEAFLET.cssHash, crossOrigin: 'anonymous' });
-    document.head.appendChild(css);
-
-    const js = document.createElement('script');
-    Object.assign(js, { src: LEAFLET.js, integrity: LEAFLET.jsHash, crossOrigin: 'anonymous' });
-    js.onload = () => resolve();
-    js.onerror = () => { promessaLeaflet = null; reject(new Error('Leaflet não carregou')); };
-    document.head.appendChild(js);
+// Acrescenta um <link> de CSS ou um <script> à página e espera que carregue
+function carregarArquivo(tipo, url, hash) {
+  return new Promise((resolve, reject) => {
+    const el = document.createElement(tipo === 'css' ? 'link' : 'script');
+    if (tipo === 'css') Object.assign(el, { rel: 'stylesheet', href: url });
+    else el.src = url;
+    Object.assign(el, { integrity: hash, crossOrigin: 'anonymous' });
+    el.onload = () => resolve();
+    el.onerror = () => reject(new Error('Não carregou: ' + url));
+    document.head.appendChild(el);
   });
+}
+
+function carregarLeaflet() {
+  if (window.L && L.markerClusterGroup) return Promise.resolve();
+  if (promessaLeaflet) return promessaLeaflet; // já está a ser baixado
+  promessaLeaflet = (async () => {
+    carregarArquivo('css', LEAFLET.css, LEAFLET.cssHash);
+    carregarArquivo('css', LEAFLET.grupoCss, LEAFLET.grupoCssHash);
+    if (!window.L) await carregarArquivo('js', LEAFLET.js, LEAFLET.jsHash);
+    // o agrupador só funciona depois do Leaflet; se falhar, o mapa abre na mesma, sem agrupar
+    try { await carregarArquivo('js', LEAFLET.grupoJs, LEAFLET.grupoJsHash); }
+    catch (erro) { console.warn(erro); }
+  })().catch(erro => { promessaLeaflet = null; throw erro; });
   return promessaLeaflet;
 }
 
@@ -631,13 +655,31 @@ function iniciarMapa() {
     }).addTo(mapa);
   }
 
-  camadaMarcadores = L.layerGroup().addTo(mapa);
+  // Pinos próximos viram um círculo com o número; ao dar zoom (ou tocar nele) eles separam-se
+  camadaMarcadores = L.markerClusterGroup
+    ? L.markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,         // eventos no mesmo sítio abrem em "leque"
+        iconCreateFunction: grupo => {
+          const n = grupo.getChildCount();
+          const tamanho = n < 10 ? 40 : n < 50 ? 48 : 56;
+          return L.divIcon({
+            className: 'grupo-marcadores',
+            html: `<span style="width:${tamanho}px;height:${tamanho}px">${n}</span>`,
+            iconSize: [tamanho, tamanho],
+          });
+        },
+      })
+    : L.layerGroup();
+  camadaMarcadores.addTo(mapa);
   desenharMarcadores();
 }
 
 function desenharMarcadores() {
   if (!mapa) return;
   camadaMarcadores.clearLayers();
+  const novos = [];
 
   filtrados.forEach(e => {
     const cat = categoriaDe(e.categoria);
@@ -651,8 +693,9 @@ function desenharMarcadores() {
       }),
     });
     marcador.on('click', () => abrirEvento(e.id));
-    camadaMarcadores.addLayer(marcador);
+    novos.push(marcador);
   });
+  camadaMarcadores.addLayers ? camadaMarcadores.addLayers(novos) : novos.forEach(m => camadaMarcadores.addLayer(m));
 
   precisaAjustarMapa = true;
   if (document.body.dataset.vista === 'mapa') ajustarMapa();
@@ -666,7 +709,7 @@ function ajustarMapa() {
   if (eventoParaFocar) {
     const e = eventos.find(x => x.id === eventoParaFocar);
     eventoParaFocar = null;
-    if (e) { mapa.setView([e.lat, e.lng], 15); precisaAjustarMapa = false; return; }
+    if (e) { mapa.setView([e.lat, e.lng], 17); precisaAjustarMapa = false; return; }
   }
 
   if (!precisaAjustarMapa) return;
@@ -674,7 +717,9 @@ function ajustarMapa() {
 
   if (filtrados.length) {
     const limites = L.latLngBounds(filtrados.map(e => [e.lat, e.lng]));
-    mapa.fitBounds(limites, { padding: [60, 60], maxZoom: 14 });
+    // margens: em cima ficam os filtros, em baixo o menu (no computador ele flutua por cima do mapa)
+    const baixo = window.matchMedia('(min-width: 1000px)').matches ? 120 : 50;
+    mapa.fitBounds(limites, { paddingTopLeft: [40, 90], paddingBottomRight: [40, baixo], maxZoom: 14 });
   } else {
     mapa.setView(CONFIG.CENTRO_PORTUGAL, CONFIG.ZOOM_INICIAL);
   }
@@ -1014,6 +1059,9 @@ async function iniciar() {
 
   iniciarHero();
   mostrarVista();
+  // categorias e filtros não dependem dos eventos: aparecem já
+  renderCategorias();
+  renderFiltrosData();
 
   // 1) mostra já a cópia guardada da última visita (se houver)...
   const copia = lerCache();

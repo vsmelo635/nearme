@@ -67,7 +67,17 @@
 
       <!-- Carrossel do topo -->
       <div class="hero">
-        <div class="hero-trilho" id="hero-trilho"></div>
+        <!-- O primeiro slide já vem no HTML: aparece logo, sem esperar pelos eventos -->
+        <div class="hero-trilho" id="hero-trilho">
+          <div class="slide slide-marca">
+            <div class="slide-conteudo">
+              <span class="sobretitulo">Mais que eventos. Experiências.</span>
+              <h1>Descobre<br>o que te move</h1>
+              <p>Concertos, festas, cultura, gastronomia e desporto perto de ti — tudo num mapa.</p>
+              <a href="#mapa" class="botao">Explorar no mapa <svg class="icone icone-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            </div>
+          </div>
+        </div>
         <div class="hero-pontos" id="hero-pontos"></div>
       </div>
 
@@ -85,7 +95,13 @@
       </div>
       <!-- Carrossel de eventos: 5 de cada vez, com setas para passar -->
       <div class="carrossel-eventos" id="lista-eventos">
-        <p class="carregando">A carregar eventos…</p>
+        <!-- Cartões "fantasma" enquanto os eventos carregam (guardam o espaço da lista) -->
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <span class="sr-only">A carregar eventos…</span>
       </div>
       <div class="carrossel-nav" id="carrossel-nav" hidden>
         <button type="button" class="seta-nav" data-pagina="-1" aria-label="Eventos anteriores">
@@ -230,7 +246,7 @@
   </div>
 
   <script src="js/app.js"></script>
-  <!-- Vercel Web Analytics: conta as visitas (sem cookies) -->
-  <script defer src="/_vercel/insights/script.js"></script>
+  <!-- Vercel Web Analytics: conta as visitas (sem cookies). "async" = não atrasa a página -->
+  <script async src="/_vercel/insights/script.js"></script>
 </body>
 </html>
