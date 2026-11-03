@@ -116,10 +116,8 @@
 
     <!-- ===== VISTA: MAPA ===== -->
     <section id="vista-mapa" class="vista" aria-label="Mapa de eventos">
-      <div class="mapa-filtros">
-        <div class="chips" id="categorias-mapa"></div>
-        <div class="chips" id="datas-mapa"></div>
-      </div>
+      <!-- Dois menus: "Tudo" (categorias) e "Qualquer dia" (datas + cidade). Abrem ao passar o rato ou tocar. -->
+      <div class="mapa-filtros" id="filtros-mapa"></div>
       <div id="mapa-leaflet"></div>
     </section>
 
@@ -171,6 +169,12 @@
           </label>
           <label>E-mail
             <input type="email" name="email" required autocomplete="email" placeholder="nome@exemplo.pt">
+          </label>
+          <!-- Telefone (opcional). Aceita números de Portugal ou de outros países, com ou sem +351 -->
+          <label><span>Telefone <span class="opcional">(opcional)</span></span>
+            <input type="tel" name="telefone" autocomplete="tel" inputmode="tel"
+                   placeholder="+351 912 345 678" pattern="\+?[0-9 \(\)\-]{9,20}"
+                   title="Escreve só números (pode começar com +). Ex.: 912 345 678">
           </label>
           <label>Nome do espaço ou evento
             <input type="text" name="local_nome" required placeholder="Ex.: Bar do Cais">

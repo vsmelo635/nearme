@@ -56,6 +56,8 @@ const ICONES = {
   externo: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
   mapa: '<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/>',
   seta: '<path d="M5 12h14M12 5l7 7-7 7"/>',
+  copiar: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  certo: '<path d="M20 6 9 17l-5-5"/>',
 };
 
 function icone(nome, classe = '') {
@@ -412,11 +414,72 @@ function renderCategorias() {
       <span class="cat-icone">${icone(c.icone)}</span><span class="cat-nome">${c.nome}</span></button>`;
   }).join('');
 
-  document.getElementById('categorias-mapa').innerHTML = lista.map(c => {
-    const ativo = estado.categoria === c.id;
-    return `<button type="button" class="chip ${ativo ? 'ativo' : ''}" data-categoria="${c.id}" aria-pressed="${ativo}">
-      ${icone(c.icone, 'icone-sm')}${c.nome}</button>`;
-  }).join('');
+}
+
+/* Filtros do Mapa: só dois botões ("Tudo" e "Qualquer dia").
+   Cada um abre uma lista na vertical: ao passar o rato (computador) ou ao tocar (telemóvel). */
+function textoDataEscolhida() {
+  const [a, m, d] = estado.data.split('-').map(Number);
+  return fmtDiaCurto.format(new Date(a, m - 1, d));
+}
+
+function renderFiltrosMapa() {
+  const marcado = ativo => `${ativo ? 'ativo' : ''}" role="menuitemradio" aria-checked="${ativo}`;
+
+  // Menu 1: categorias
+  const cat = estado.categoria === 'todas' ? { nome: 'Tudo', icone: 'tudo' } : categoriaDe(estado.categoria);
+  const itensCategoria = [{ id: 'todas', nome: 'Tudo', icone: 'tudo' }, ...CATEGORIAS].map(c => `
+    <button type="button" class="menu-item ${marcado(estado.categoria === c.id)}" data-categoria="${c.id}">
+      ${icone(c.icone, 'icone-sm')}<span>${c.nome}</span>
+    </button>`).join('');
+
+  // Menu 2: quando + cidade
+  const temData = estado.quando === 'data' && estado.data;
+  const nomeQuando = temData ? textoDataEscolhida() : QUANDO.find(q => q.id === estado.quando)?.nome || 'Qualquer dia';
+  const rotuloQuando = estado.cidade === 'todas' ? nomeQuando : `${nomeQuando} · ${estado.cidade}`;
+
+  const itensQuando = QUANDO.map(q => `
+    <button type="button" class="menu-item ${marcado(estado.quando === q.id)}" data-quando="${q.id}">
+      <span>${q.nome}</span>
+    </button>`).join('');
+  const itemData = `
+    <label class="menu-item menu-data ${temData ? 'ativo' : ''}">
+      ${icone('calendario', 'icone-sm')}<span>${temData ? textoDataEscolhida() : 'Escolher data'}</span>
+      <input type="date" class="input-data" value="${esc(estado.data)}" min="${hojeISO()}" aria-label="Escolher data">
+    </label>`;
+
+  const cidades = [...new Set(eventos.map(e => e.cidade).filter(Boolean))].sort();
+  const itensCidade = ['todas', ...cidades].map(c => `
+    <button type="button" class="menu-item ${marcado(estado.cidade === c)}" data-cidade-valor="${esc(c)}">
+      ${icone('pino', 'icone-sm')}<span>${c === 'todas' ? 'Todas as cidades' : esc(c)}</span>
+    </button>`).join('');
+
+  const seta = '<svg class="icone icone-sm seta-menu" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+  document.getElementById('filtros-mapa').innerHTML = `
+    <div class="menu-filtro">
+      <button type="button" class="menu-botao" data-abrir-menu aria-haspopup="true" aria-expanded="false">
+        ${icone(cat.icone, 'icone-sm')}<span>${cat.nome}</span>${seta}
+      </button>
+      <div class="menu-lista"><div class="menu-caixa" role="menu" aria-label="Categoria">${itensCategoria}</div></div>
+    </div>
+    <div class="menu-filtro">
+      <button type="button" class="menu-botao" data-abrir-menu aria-haspopup="true" aria-expanded="false">
+        ${icone('calendario', 'icone-sm')}<span>${esc(rotuloQuando)}</span>${seta}
+      </button>
+      <div class="menu-lista"><div class="menu-caixa" role="menu" aria-label="Quando e onde">
+        <span class="menu-titulo">Quando</span>${itensQuando}${itemData}
+        <span class="menu-titulo">Cidade</span>${itensCidade}
+      </div></div>
+    </div>`;
+}
+
+function fecharMenus(excepto) {
+  document.querySelectorAll('.menu-filtro.aberto').forEach(m => {
+    if (m === excepto) return;
+    m.classList.remove('aberto');
+    m.querySelector('[data-abrir-menu]').setAttribute('aria-expanded', 'false');
+  });
 }
 
 function htmlFiltrosData() {
@@ -450,7 +513,7 @@ function htmlFiltrosData() {
 function renderFiltrosData() {
   const html = htmlFiltrosData();
   document.getElementById('datas-inicio').innerHTML = html;
-  document.getElementById('datas-mapa').innerHTML = html;
+  renderFiltrosMapa();
 }
 
 function renderLista() {
@@ -620,6 +683,46 @@ function ajustarMapa() {
 /* ---------- 8. DETALHE DO EVENTO ---------- */
 const folha = document.getElementById('folha');
 
+// Endereço que vai para a área de transferência (se não houver endereço, usa o local + cidade)
+function enderecoCompleto(e) {
+  const endereco = String(e.endereco || '').trim();
+  if (endereco) return endereco;
+  return [e.local_nome, e.cidade].filter(Boolean).join(', ');
+}
+
+// Copia um texto (com plano B para navegadores antigos)
+async function copiarTexto(texto) {
+  try {
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch (_) {
+    const campo = document.createElement('textarea');
+    campo.value = texto;
+    campo.setAttribute('readonly', '');
+    campo.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(campo);
+    campo.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+    campo.remove();
+    return ok;
+  }
+}
+
+async function copiarEndereco(botao) {
+  const ok = await copiarTexto(botao.dataset.copiar);
+  const texto = botao.querySelector('span');
+  botao.classList.toggle('copiado', ok);
+  botao.querySelector('svg').innerHTML = ICONES[ok ? 'certo' : 'copiar'];
+  texto.textContent = ok ? 'Copiado!' : 'Não deu';
+  clearTimeout(botao._espera);
+  botao._espera = setTimeout(() => {
+    botao.classList.remove('copiado');
+    botao.querySelector('svg').innerHTML = ICONES.copiar;
+    texto.textContent = 'Copiar';
+  }, 2000);
+}
+
 function abrirEvento(id) {
   const e = eventos.find(x => x.id === String(id));
   if (!e) return;
@@ -634,7 +737,10 @@ function abrirEvento(id) {
       <h2 id="folha-titulo">${esc(e.nome)}</h2>
       <ul class="detalhes">
         <li>${icone('calendario')}<span>${esc(textoData(e))}</span></li>
-        <li>${icone('pino')}<span>${esc(e.local_nome)}<br><small>${esc(e.endereco)}</small></span></li>
+        <li>${icone('pino')}<span class="detalhe-texto">${esc(e.local_nome)}<br><small>${esc(e.endereco)}</small></span>
+          <button type="button" class="botao-copiar" data-copiar="${esc(enderecoCompleto(e))}" aria-label="Copiar endereço">
+            ${icone('copiar', 'icone-sm')}<span>Copiar</span>
+          </button></li>
         <li>${icone('euro')}<span>${esc(e.preco || 'Preço a confirmar')}</span></li>
       </ul>
       ${e.descricao ? `<p class="descricao">${esc(e.descricao)}</p>` : ''}
@@ -790,16 +896,29 @@ function mostrarMensagem(el, texto, tipo) {
 
 /* ---------- 12. CLIQUES E EVENTOS ---------- */
 document.addEventListener('click', ev => {
-  const alvo = ev.target.closest('[data-id], [data-categoria], [data-quando], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
+  // Menus do Mapa: tocar no botão abre/fecha; tocar fora fecha
+  const menu = ev.target.closest('.menu-filtro');
+  fecharMenus(menu);
+  const botaoMenu = ev.target.closest('[data-abrir-menu]');
+  if (botaoMenu) {
+    const abrir = !menu.classList.contains('aberto');
+    menu.classList.toggle('aberto', abrir);
+    botaoMenu.setAttribute('aria-expanded', String(abrir));
+    return;
+  }
+
+  const alvo = ev.target.closest('[data-copiar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
   if (!alvo) return;
 
   if (alvo.dataset.pagina) { mudarPagina(Number(alvo.dataset.pagina)); return; }
+  if (alvo.dataset.cidadeValor) { estado.cidade = alvo.dataset.cidadeValor; atualizar(); return; }
 
   if (alvo.matches('.input-data')) {
     try { alvo.showPicker(); } catch (_) { /* navegadores antigos abrem sozinhos */ }
     return;
   }
   if (alvo.hasAttribute('data-fechar')) { fecharEvento(); return; }
+  if (alvo.hasAttribute('data-copiar')) { copiarEndereco(alvo); return; }
 
   if (alvo.dataset.verMapa) {
     eventoParaFocar = alvo.dataset.verMapa;
@@ -811,8 +930,8 @@ document.addEventListener('click', ev => {
 
   if (alvo.dataset.categoria) {
     const escolhida = alvo.dataset.categoria;
-    // tocar de novo na categoria ativa volta para "Tudo"
-    estado.categoria = (estado.categoria === escolhida) ? 'todas' : escolhida;
+    // no menu do Mapa escolhe direto; nos ícones do Início, tocar de novo na ativa volta para "Tudo"
+    estado.categoria = (estado.categoria === escolhida && !alvo.closest('.menu-filtro')) ? 'todas' : escolhida;
     atualizar();
     return;
   }
@@ -865,6 +984,7 @@ document.addEventListener('change', ev => {
 
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && !folha.hidden) fecharEvento();
+  if (ev.key === 'Escape') fecharMenus();
 });
 
 window.addEventListener('hashchange', mostrarVista);
