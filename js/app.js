@@ -58,6 +58,7 @@ const ICONES = {
   seta: '<path d="M5 12h14M12 5l7 7-7 7"/>',
   copiar: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   certo: '<path d="M20 6 9 17l-5-5"/>',
+  partilhar: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
 };
 
 function icone(nome, classe = '') {
@@ -78,6 +79,9 @@ let mapa = null;
 let camadaMarcadores = null;
 let precisaAjustarMapa = true;
 let eventoParaFocar = null;
+let eventoPendente = '';   // evento pedido pelo link (#evento=...) antes de os eventos carregarem
+let hashAntesDoEvento = ''; // para onde o endereço volta ao fechar o evento
+let veioDaReserva = false; // true = a planilha falhou e estamos a usar o eventos.json
 
 /* ---------- 3. FUNÇÕES DE APOIO ---------- */
 
@@ -202,11 +206,13 @@ async function obterDados() {
       url.searchParams.set('_', Date.now()); // evita pegar uma versão antiga guardada
       const resposta = await fetch(url, { cache: 'no-store' });
       if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
+      veioDaReserva = false;
       return lerCSV(await resposta.text());
     } catch (erro) {
       console.warn('Não consegui ler a planilha. A usar o eventos.json.', erro);
     }
   }
+  veioDaReserva = true;
   const resposta = await fetch(CONFIG.EVENTOS_URL, { cache: 'no-cache' });
   if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
   return resposta.json();
@@ -265,9 +271,13 @@ function prepararEventos(dados) {
 async function carregarEventos() {
   try {
     const dados = await obterDados();
-    eventos = prepararEventos(dados);
+    const novos = prepararEventos(dados);
+    // A planilha falhou e a reserva (eventos.json) só tem eventos que já passaram:
+    // é um erro de ligação, não "zero eventos". Mantém o que já estava no ecrã.
+    if (veioDaReserva && CONFIG.PLANILHA_CSV_URL && !novos.length) throw new Error('Planilha indisponível e reserva sem eventos futuros');
+    eventos = novos;
     erroAoCarregar = false;
-    guardarCache(dados);
+    if (!veioDaReserva) guardarCache(dados); // só guarda a cópia quando veio da planilha (dados frescos)
   } catch (erro) {
     // só mostra erro se também não houver cópia guardada para mostrar
     if (!eventos.length) erroAoCarregar = true;
@@ -367,11 +377,16 @@ function renderHero() {
       </div>
     </div>`;
 
-  const destaques = eventos.filter(e => e.destaque).slice(0, 4).map(e => `
+  // Destaques: os marcados com "sim" na planilha. Se ninguém marcou nenhum,
+  // o site escolhe sozinho os 3 próximos eventos que têm foto (o carrossel nunca fica vazio).
+  const marcados = eventos.filter(e => e.destaque).slice(0, 4);
+  const automaticos = marcados.length ? [] : eventos.filter(e => linkSeguro(urlImagem(e.imagem_url))).slice(0, 3);
+  const rotulo = marcados.length ? 'Em destaque' : 'A seguir';
+  const destaques = [...marcados, ...automaticos].map(e => `
     <div class="slide">
       ${capa(e)}
       <div class="slide-conteudo">
-        <span class="sobretitulo">Em destaque · ${categoriaDe(e.categoria).nome}</span>
+        <span class="sobretitulo">${rotulo} · ${categoriaDe(e.categoria).nome}</span>
         <h2>${esc(e.nome)}</h2>
         <p>${esc(textoDataCurta(e))} · ${esc(e.local_nome)}, ${esc(e.cidade)}</p>
         <button type="button" class="botao" data-id="${esc(e.id)}">Ver evento ${icone('seta', 'icone-sm')}</button>
@@ -754,6 +769,65 @@ async function copiarTexto(texto) {
   }
 }
 
+// Link direto de um evento, ex.: https://www.nearme.pt/#evento=ne-053
+function linkDoEvento(id) {
+  return `${location.origin}${location.pathname}#evento=${encodeURIComponent(id)}`;
+}
+
+// Lê o id do evento que está no endereço (#evento=...). Devolve '' se não houver.
+function idDoHash() {
+  const m = location.hash.match(/^#evento=(.+)$/);
+  if (!m) return '';
+  try { return decodeURIComponent(m[1]); } catch (_) { return ''; }
+}
+
+// Troca o endereço sem recarregar nem mexer na posição da página
+function trocarHash(hash) {
+  try { history.replaceState(null, '', hash || location.pathname); } catch (_) { /* navegador muito antigo */ }
+}
+
+// Aviso curto em baixo do ecrã (some sozinho)
+function avisar(texto) {
+  document.querySelector('.aviso-flutuante')?.remove();
+  const el = document.createElement('div');
+  el.className = 'aviso-flutuante';
+  el.setAttribute('role', 'status');
+  el.textContent = texto;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+// Botão "Partilhar": no telemóvel abre o menu de partilha (WhatsApp, Instagram...); no computador copia o link
+async function partilharEvento(id) {
+  const e = eventos.find(x => x.id === String(id));
+  if (!e) return;
+  const url = linkDoEvento(e.id);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: e.nome, text: `${e.nome} · ${e.local_nome}, ${e.cidade}`, url });
+      return;
+    } catch (erro) {
+      if (erro.name === 'AbortError') return; // a pessoa fechou o menu
+    }
+  }
+  avisar((await copiarTexto(url)) ? 'Link copiado!' : 'Não foi possível copiar o link.');
+}
+
+// Abre o evento pedido pelo link assim que os eventos estiverem carregados
+function abrirEventoPendente(ultimaTentativa = false) {
+  if (!eventoPendente) return;
+  if (eventos.some(x => x.id === eventoPendente)) {
+    const id = eventoPendente;
+    eventoPendente = '';
+    abrirEvento(id);
+  } else if (ultimaTentativa) {
+    // o evento do link já terminou ou foi retirado
+    eventoPendente = '';
+    trocarHash('#' + document.body.dataset.vista);
+    if (!erroAoCarregar) avisar('Este evento já terminou ou foi retirado.');
+  }
+}
+
 async function copiarEndereco(botao) {
   const ok = await copiarTexto(botao.dataset.copiar);
   const texto = botao.querySelector('span');
@@ -793,23 +867,43 @@ function abrirEvento(id) {
         <a class="botao" href="${comoChegar}" target="_blank" rel="noopener">${icone('navegar')} Como chegar</a>
         ${link ? `<a class="botao botao-sec" href="${esc(link)}" target="_blank" rel="noopener">${icone('externo')} Bilhetes / mais info</a>` : ''}
         <button type="button" class="botao botao-texto" data-ver-mapa="${esc(e.id)}">${icone('mapa')} Ver no mapa</button>
+        <button type="button" class="botao botao-texto" data-partilhar="${esc(e.id)}">${icone('partilhar')} Partilhar</button>
       </div>
     </div>`;
+
+  // o endereço passa a ser o link direto deste evento (dá para copiar da barra e partilhar)
+  if (!idDoHash()) hashAntesDoEvento = location.hash;
+  if (idDoHash() !== e.id) trocarHash('#evento=' + encodeURIComponent(e.id));
 
   folha.hidden = false;
   document.body.classList.add('sem-scroll');
   folha.querySelector('.folha-fechar').focus();
 }
 
-function fecharEvento() {
+// reporHash = false quando o endereço já mudou por outra via (ex.: botão "voltar" do navegador)
+function fecharEvento(reporHash = true) {
   folha.hidden = true;
   document.body.classList.remove('sem-scroll');
+  if (reporHash && idDoHash()) trocarHash(hashAntesDoEvento || '#' + document.body.dataset.vista);
 }
 
 /* ---------- 9. NAVEGAÇÃO ENTRE "PÁGINAS" (#inicio, #mapa…) ---------- */
-const VISTAS = ['inicio', 'mapa', 'novidades', 'divulgar'];
+const VISTAS = ['inicio', 'mapa', 'novidades', 'divulgar', 'privacidade'];
 
 function mostrarVista() {
+  // Link direto de um evento (#evento=...): fica na vista atual e abre o evento por cima
+  const idEvento = idDoHash();
+  if (idEvento) {
+    const atual = document.body.dataset.vista;
+    hashAntesDoEvento = '#' + atual;
+    document.querySelector(`.nav-baixo a[data-vista="${atual}"]`)?.classList.add('ativo');
+    if (atual === 'mapa') abrirMapa();
+    eventoPendente = idEvento;
+    abrirEventoPendente();
+    return;
+  }
+  if (!folha.hidden) fecharEvento(false); // o endereço mudou com um evento aberto: fecha-o
+
   const pedida = location.hash.slice(1);
   const vista = VISTAS.includes(pedida) ? pedida : 'inicio';
 
@@ -845,7 +939,8 @@ async function enviarFormulario(ev) {
   // validação simples dos campos obrigatórios
   if (!form.checkValidity()) {
     const invalido = form.querySelector(':invalid');
-    mostrarMensagem(msg, 'Verifica os campos assinalados.', 'erro');
+    const faltaAceitar = invalido?.name === 'consentimento';
+    mostrarMensagem(msg, faltaAceitar ? 'Marca a caixa a aceitar a Política de Privacidade.' : 'Verifica os campos obrigatórios.', 'erro');
     invalido?.focus();
     return;
   }
@@ -880,7 +975,7 @@ async function enviarFormulario(ev) {
 }
 
 /* Envia um lead para o Google Apps Script (grava uma linha na aba "Leads").
-   Devolve 'ok' quando temos a certeza ou boa razão para crer que chegou, ou 'falhou' quando de certeza não chegou. */
+   Devolve 'ok' só quando o Google confirma que gravou; em qualquer outro caso devolve 'falhou'. */
 async function enviarLead(dados) {
   if (!navigator.onLine) return 'falhou';              // sem internet: nem tenta
   const controlo = new AbortController();
@@ -892,13 +987,20 @@ async function enviarLead(dados) {
       body: new URLSearchParams(dados),
       signal: controlo.signal,
     });
-    return resposta.ok ? 'ok' : 'falhou';               // ex.: 404 ou 500 = não gravou
-  } catch (erro) {
-    if (erro.name === 'AbortError') return 'falhou';    // demorou demais
-    // Outro erro com internet ligada: normalmente é o Google não deixar LER a resposta (CORS),
-    // mas o pedido chega e a linha é gravada. Por isso contamos como enviado.
-    console.warn('Lead enviado, mas sem confirmação do Google:', erro);
+    if (!resposta.ok) return 'falhou';                  // ex.: 404 ou 500 = não gravou
+    // O nosso Apps Script responde {"ok":true} depois de gravar a linha.
+    // Se responder {"ok":false}, não gravou. (Se um dia a resposta deixar de ser JSON, confiamos no "200 OK".)
+    try {
+      const corpo = await resposta.json();
+      if (corpo && corpo.ok === false) return 'falhou';
+    } catch (_) { /* resposta sem JSON: fica valendo o 200 OK */ }
     return 'ok';
+  } catch (erro) {
+    // Demorou demais, a ligação caiu ou o Google não respondeu: NÃO temos confirmação.
+    // Conta como "falhou": o lead fica guardado no navegador e é reenviado sozinho.
+    // (Na pior das hipóteses fica uma linha repetida na planilha — melhor do que perder o contacto.)
+    console.warn('Lead sem confirmação do Google; fica guardado para reenviar:', erro);
+    return 'falhou';
   } finally {
     clearTimeout(limite);
   }
@@ -952,7 +1054,7 @@ document.addEventListener('click', ev => {
     return;
   }
 
-  const alvo = ev.target.closest('[data-copiar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
+  const alvo = ev.target.closest('[data-copiar], [data-partilhar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
   if (!alvo) return;
 
   if (alvo.dataset.pagina) { mudarPagina(Number(alvo.dataset.pagina)); return; }
@@ -964,6 +1066,7 @@ document.addEventListener('click', ev => {
   }
   if (alvo.hasAttribute('data-fechar')) { fecharEvento(); return; }
   if (alvo.hasAttribute('data-copiar')) { copiarEndereco(alvo); return; }
+  if (alvo.dataset.partilhar) { partilharEvento(alvo.dataset.partilhar); return; }
 
   if (alvo.dataset.verMapa) {
     eventoParaFocar = alvo.dataset.verMapa;
@@ -1069,6 +1172,7 @@ async function iniciar() {
     eventos = prepararEventos(copia);
     renderHero();
     atualizar();
+    abrirEventoPendente();
   }
   // 2) ...e depois troca pela versão nova da planilha, sem perder a página do carrossel nem a busca
   const paginaAntes = pagina;
@@ -1076,6 +1180,7 @@ async function iniciar() {
   renderHero();
   atualizar();
   if (copia) { pagina = paginaAntes; renderLista(); }
+  abrirEventoPendente(true);
 
   // leads que ficaram por enviar numa visita anterior
   reenviarLeadsPendentes();

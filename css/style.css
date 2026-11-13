@@ -540,6 +540,33 @@ form .botao { margin-top: 6px; }
 .form-msg.erro { color: #dc2626; }
 .form-msg.aviso { color: var(--laranja); }
 
+/* caixa de consentimento (RGPD): quadradinho à esquerda, texto à direita */
+form label.consentimento { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 500; color: var(--texto-2); line-height: 1.4; cursor: pointer; }
+form label.consentimento input {
+  width: 22px; height: 22px; min-height: 0; flex-shrink: 0; padding: 0; margin: 0;
+  accent-color: var(--laranja); cursor: pointer;
+}
+form label.consentimento a, .painel-texto a:not(.botao) { color: var(--laranja); font-weight: 600; text-decoration: underline; }
+
+/* página de texto (Política de Privacidade) */
+.painel-texto { max-width: 680px; }
+.painel-texto h2 { font-size: 1.05rem; font-weight: 700; margin: 22px 0 6px; }
+.painel-texto p, .painel-texto li { font-size: 0.95rem; }
+.painel-texto > p { margin-bottom: 0; }
+.painel-texto p + p { margin-top: 10px; }
+.painel-texto ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.painel-texto .botao { margin-top: 22px; }
+
+/* aviso curto que aparece em baixo (ex.: "Link copiado!") */
+.aviso-flutuante {
+  position: fixed; left: 50%; bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 20px); z-index: 3000;
+  transform: translateX(-50%); max-width: calc(100% - 32px);
+  padding: 10px 18px; border-radius: 999px;
+  background: var(--marca-escuro); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.9rem; font-weight: 600; text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); animation: aparecer 0.2s ease;
+}
+
 /* ---------- 15. Menu de baixo ---------- */
 .nav-baixo {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;

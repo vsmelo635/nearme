@@ -116,7 +116,7 @@
       <!-- Chamada para a newsletter -->
       <div class="cta">
         <h3>Os melhores eventos da semana no teu e-mail</h3>
-        <p>Uma seleção curta, todas as quintas-feiras. Sem spam.</p>
+        <p>Uma seleção curta dos melhores eventos. Sem spam.</p>
         <a href="#novidades" class="botao">Quero receber</a>
       </div>
 
@@ -127,6 +127,7 @@
         </picture>
         <p>© <span id="ano"></span> Nearme · Feito em Portugal</p>
         <p><a href="#divulgar">Organizas eventos? Divulga aqui</a></p>
+        <p><a href="#privacidade">Política de Privacidade</a></p>
       </footer>
     </section>
 
@@ -158,10 +159,17 @@
             <select name="cidade" required>
               <option value="">Escolhe a tua cidade</option>
               <option>Lisboa</option>
+              <option>Cascais</option>
+              <option>Oeiras</option>
               <option>Porto</option>
               <option>Aveiro</option>
               <option>Outra</option>
             </select>
+          </label>
+          <!-- Consentimento (RGPD): sem esta caixa marcada o formulário não é enviado -->
+          <label class="consentimento">
+            <input type="checkbox" name="consentimento" value="sim" required>
+            <span>Aceito receber a newsletter do Nearme e li a <a href="#privacidade">Política de Privacidade</a>.</span>
           </label>
           <button type="submit" class="botao botao-largo">Inscrever-me</button>
           <p class="form-msg" role="status"></p>
@@ -199,6 +207,8 @@
             <select name="cidade" required>
               <option value="">Escolhe a cidade</option>
               <option>Lisboa</option>
+              <option>Cascais</option>
+              <option>Oeiras</option>
               <option>Porto</option>
               <option>Aveiro</option>
               <option>Outra</option>
@@ -207,9 +217,49 @@
           <label>Link (Instagram, site ou bilheteira)
             <input type="url" name="link" placeholder="https://instagram.com/...">
           </label>
+          <!-- Consentimento (RGPD): sem esta caixa marcada o formulário não é enviado -->
+          <label class="consentimento">
+            <input type="checkbox" name="consentimento" value="sim" required>
+            <span>Aceito que o Nearme me contacte sobre este pedido e li a <a href="#privacidade">Política de Privacidade</a>.</span>
+          </label>
           <button type="submit" class="botao botao-largo">Enviar pedido</button>
           <p class="form-msg" role="status"></p>
         </form>
+      </div>
+    </section>
+    <!-- ===== VISTA: PRIVACIDADE ===== -->
+    <section id="vista-privacidade" class="vista" aria-label="Política de Privacidade">
+      <div class="painel-form painel-texto">
+        <span class="sobretitulo">Os teus dados</span>
+        <h1>Política de Privacidade</h1>
+        <p class="texto-2">Última atualização: 12 de novembro de 2026</p>
+
+        <h2>Quem somos</h2>
+        <p>O Nearme é um site de eventos em mapa, feito em Portugal. Somos nós os responsáveis pelos dados que nos deixas. Para qualquer questão sobre os teus dados, escreve para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>.</p>
+
+        <h2>Que dados recolhemos</h2>
+        <ul>
+          <li><strong>Newsletter:</strong> e-mail, cidade e, se quiseres, o teu nome.</li>
+          <li><strong>Pedido de divulgação:</strong> nome, e-mail, nome do espaço ou evento, cidade e, se quiseres, telefone e link.</li>
+          <li>Em ambos os casos guardamos a data do pedido e o registo de que aceitaste esta política.</li>
+        </ul>
+
+        <h2>Para que os usamos</h2>
+        <p>Só para aquilo que pediste: enviar-te os eventos por e-mail ou entrar em contacto contigo sobre a divulgação do teu evento. Fazemo-lo com base no teu consentimento. Não vendemos nem cedemos os teus dados para publicidade de terceiros.</p>
+
+        <h2>Onde ficam guardados</h2>
+        <p>Numa folha de cálculo do Google (Google Sheets), a que só a equipa do Nearme tem acesso. O site está alojado na Vercel. Estas empresas tratam os dados por nossa conta e podem guardá-los em servidores fora da União Europeia, com as garantias previstas na lei.</p>
+
+        <h2>Cookies e estatísticas</h2>
+        <p>Não usamos cookies de publicidade. Contamos as visitas com o Vercel Web Analytics, que não usa cookies nem identifica quem visita o site. O teu navegador guarda uma cópia da lista de eventos, para o site abrir mais depressa, e, se um envio de formulário falhar, guarda esse pedido para tentar de novo.</p>
+
+        <h2>Durante quanto tempo</h2>
+        <p>Enquanto quiseres receber a newsletter ou enquanto durar o contacto sobre o teu evento. Se pedires, apagamos os teus dados.</p>
+
+        <h2>Os teus direitos</h2>
+        <p>Podes, a qualquer momento, pedir para ver, corrigir ou apagar os teus dados, e retirar o teu consentimento. Basta enviar um e-mail para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>. Também podes apresentar reclamação à Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener">cnpd.pt</a>).</p>
+
+        <p><a href="#inicio" class="botao botao-sec">Voltar ao início</a></p>
       </div>
     </section>
   </main>
