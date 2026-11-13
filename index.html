@@ -33,8 +33,10 @@
 
   <!-- Nosso estilo. O Leaflet (mapa) só é carregado quando a pessoa abre o Mapa (ver js/app.js) -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/fundo-mapa.css">
 </head>
 <body data-vista="inicio">
+  <canvas id="fundo-mapa" aria-hidden="true"></canvas>
 
   <!-- ===== TOPO ===== -->
   <header class="topo">
@@ -42,8 +44,8 @@
       <!-- Se a imagem do logo não carregar, aparece o logótipo em texto logo abaixo -->
       <!-- escuro = texto branco (tema escuro) · claro = texto escuro (tema claro) -->
       <picture>
-        <source srcset="img/marca/nearme-logo-horizontal-escuro.svg" media="(prefers-color-scheme: dark)">
-        <img src="img/marca/nearme-logo-horizontal-claro.svg" alt="Nearme" class="logo-img" width="362" height="100">
+        <source srcset="img/marca/nearme-logo-horizontal-escuro.svg?v=2" media="(prefers-color-scheme: dark)">
+        <img src="img/marca/nearme-logo-horizontal-claro.svg?v=2" alt="Nearme" class="logo-img" width="362" height="100">
       </picture>
       <span class="logo-texto" aria-hidden="true">
         <svg viewBox="0 0 100 100" class="logo-simbolo"><path d="M57.42 82.15A33 33 0 1 1 82.75 45.98"/><circle cx="77.03" cy="68.93" r="9.3"/></svg>
@@ -84,8 +86,9 @@
       <div class="secao-titulo"><h2>Categorias</h2></div>
       <div class="categorias" id="categorias-inicio"></div>
 
-      <div class="secao-titulo"><h2>Quando?</h2></div>
-      <div class="chips" id="datas-inicio"></div>
+      <!-- "Quando?" escondido da tela inicial (o filtro de data continua na tela do Mapa) -->
+      <div class="secao-titulo" hidden><h2>Quando?</h2></div>
+      <div class="chips" id="datas-inicio" hidden></div>
 
       <div class="secao-titulo">
         <h2>Próximos eventos <span class="contador" id="contador"></span></h2>
@@ -295,6 +298,7 @@
     </article>
   </div>
 
+  <script src="js/fundo-mapa.js"></script>
   <script src="js/app.js"></script>
   <!-- Vercel Web Analytics: conta as visitas (sem cookies). "async" = não atrasa a página -->
   <script async src="/_vercel/insights/script.js"></script>

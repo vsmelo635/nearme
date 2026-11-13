@@ -430,7 +430,7 @@ function iniciarHero() {
 }
 
 function renderCategorias() {
-  const lista = [{ id: 'todas', nome: 'Tudo', icone: 'tudo' }, ...CATEGORIAS];
+  const lista = CATEGORIAS; // sem o botão "Tudo": tocar de novo na categoria ativa volta a mostrar todos
 
   document.getElementById('categorias-inicio').innerHTML = lista.map(c => {
     const ativo = estado.categoria === c.id;
