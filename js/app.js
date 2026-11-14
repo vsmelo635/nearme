@@ -742,6 +742,34 @@ function ajustarMapa() {
 
 /* ---------- 8. DETALHE DO EVENTO ---------- */
 const folha = document.getElementById('folha');
+let idEventoAberto = ''; // evento que está no painel agora ('' = painel fechado)
+
+// Páginas próprias dos eventos (criadas por scripts/gerar-paginas.js), para o link "Abrir página do evento".
+// O ficheiro só é descarregado quando se abre o primeiro evento. Se falhar, o painel fica como sempre (sem o link).
+let promessaPaginas = null;
+function paginasDosEventos() {
+  if (!promessaPaginas) {
+    promessaPaginas = fetch('/eventos/paginas.json', { cache: 'no-cache' })
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+  }
+  return promessaPaginas;
+}
+
+// Põe o link no painel se este evento tiver página. O id E o nome têm de bater certo:
+// os ids "linha-N" (linhas sem id na planilha) mudam quando alguém apaga uma linha.
+async function mostrarLinkDaPagina(e) {
+  const paginas = await paginasDosEventos();
+  const info = paginas && Object.prototype.hasOwnProperty.call(paginas, e.id) ? paginas[e.id] : null;
+  if (!info || info.nome !== String(e.nome || '').trim()) return;
+  if (typeof info.pagina !== 'string' || !/^[a-z0-9-]+$/.test(info.pagina)) return;
+  // a pessoa pode ter fechado o painel ou aberto outro evento enquanto o ficheiro chegava
+  if (folha.hidden || idEventoAberto !== e.id) return;
+  const acoes = folha.querySelector('.acoes');
+  if (!acoes || acoes.querySelector('.link-pagina')) return;
+  acoes.insertAdjacentHTML('beforeend',
+    `<a class="botao botao-texto link-pagina" href="/eventos/${info.pagina}.html">${icone('seta')} Abrir página do evento</a>`);
+}
 
 // Endereço que vai para a área de transferência (se não houver endereço, usa o local + cidade)
 function enderecoCompleto(e) {
@@ -878,10 +906,13 @@ function abrirEvento(id) {
   folha.hidden = false;
   document.body.classList.add('sem-scroll');
   folha.querySelector('.folha-fechar').focus();
+  idEventoAberto = e.id;
+  mostrarLinkDaPagina(e);
 }
 
 // reporHash = false quando o endereço já mudou por outra via (ex.: botão "voltar" do navegador)
 function fecharEvento(reporHash = true) {
+  idEventoAberto = '';
   folha.hidden = true;
   document.body.classList.remove('sem-scroll');
   if (reporHash && idDoHash()) trocarHash(hashAntesDoEvento || '#' + document.body.dataset.vista);
