@@ -17,3 +17,6 @@ img/marca/nearme-logo-preview.png
 
 # Código do Apps Script (é colado na planilha, não faz parte do site)
 apps-script/
+
+# Gerador das páginas de eventos (corre no computador, não faz parte do site)
+scripts/
