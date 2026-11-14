@@ -18,5 +18,14 @@ img/marca/nearme-logo-preview.png
 # Código do Apps Script (é colado na planilha, não faz parte do site)
 apps-script/
 
-# Gerador das páginas de eventos (corre no computador, não faz parte do site)
-scripts/
+# A pasta scripts/ NÃO pode ficar aqui: a Vercel precisa dela para gerar as páginas a cada deploy.
+# Depois de gerar, o próprio build apaga a pasta (vercel.json → buildCommand), e o "redirects"
+# do vercel.json ainda manda /scripts/... para a página inicial, por garantia.
+
+# Arquivos internos que não estão no Git, mas que um "vercel" corrido no computador enviaria
+# (quando existe .vercelignore, a Vercel deixa de ler o .gitignore)
+.claude/
+.github/
+.env*
+PROMPT-REBRANDING-NEARME.md
+imagens-eventos.csv

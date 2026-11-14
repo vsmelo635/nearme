@@ -1,4 +1,8 @@
 {
+  "buildCommand": "node scripts/gerar-paginas.js && rm -rf scripts",
+  "redirects": [
+    { "source": "/scripts/:caminho*", "destination": "/", "permanent": false }
+  ],
   "headers": [
     {
       "source": "/(.*)",

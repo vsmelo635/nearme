@@ -22,3 +22,11 @@ COMO-ADICIONAR-EVENTOS.md
 
 .vercel
 .env*
+
+# Subagentes do Claude Code (ficam só no computador, não vão para o site público)
+.claude/
+
+# Páginas de eventos e sitemap: são criadas pela Vercel a cada deploy (scripts/gerar-paginas.js).
+# Se correres o gerador no computador, os arquivos ficam só aí, para conferires.
+eventos/
+sitemap.xml

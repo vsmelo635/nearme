@@ -1,0 +1,36 @@
+# =========================================================
+# Nearme — atualiza o site uma vez por dia
+# Arquivo: .github/workflows/atualizar-site.yml
+#
+# Todos os dias, por volta das 6h em Portugal, pede à Vercel um deploy novo.
+# Nesse deploy a Vercel corre scripts/gerar-paginas.js, que lê a planilha e
+# cria as páginas dos eventos e o sitemap.xml (ver vercel.json → buildCommand).
+#
+# Precisa de um "secret" no GitHub chamado VERCEL_DEPLOY_HOOK com o link do
+# Deploy Hook da Vercel (passo a passo no relatório). Também dá para correr à mão:
+# GitHub → separador Actions → "Atualizar site (diário)" → Run workflow.
+# =========================================================
+name: Atualizar site (diário)
+
+on:
+  schedule:
+    - cron: '0 5 * * *'   # 05:00 UTC = 05:00 no inverno / 06:00 no verão em Portugal
+  workflow_dispatch:       # botão "Run workflow" para correr à mão
+
+permissions: {}            # não precisa de mexer no repositório
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Pedir deploy à Vercel
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "Falta o secret VERCEL_DEPLOY_HOOK (GitHub → Settings → Secrets and variables → Actions)."
+            exit 1
+          fi
+          curl --fail --silent --show-error --max-time 30 -X POST "$HOOK" > /dev/null
+          echo "Deploy pedido. Acompanha em vercel.com → projeto nearme → Deployments."

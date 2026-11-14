@@ -2,7 +2,12 @@
    Nearme — gerador de páginas de eventos (para o Google)
    Arquivo: scripts/gerar-paginas.js
 
-   Como usar (no terminal, dentro da pasta do projeto):
+   Quem corre: a Vercel, sozinha, em cada deploy (vercel.json → "buildCommand"; depois de gerar,
+   o build apaga a pasta scripts/ para ela não ficar publicada).
+   Um deploy automático acontece todos os dias (.github/workflows/atualizar-site.yml).
+   As páginas geradas NÃO vão para o Git (estão no .gitignore).
+
+   Para conferir no computador (opcional), no terminal, dentro da pasta do projeto:
      node scripts/gerar-paginas.js
 
    O que faz:
@@ -469,8 +474,14 @@ async function principal() {
     console.warn('');
     console.warn('ATENÇÃO: as páginas foram geradas a partir da RESERVA (data/eventos.json), não da planilha.');
     console.warn('Nenhuma página antiga foi apagada, mas o sitemap e o paginas.json podem estar incompletos.');
-    console.warn('Antes de fazer commit, corre o script de novo quando a planilha estiver disponível.');
-    process.exitCode = 2;
+    // Saída de emergência: com a variável PERMITIR_RESERVA=1 (Vercel → Settings → Environment Variables)
+    // o deploy passa mesmo com a planilha em baixo (útil para publicar uma correção urgente).
+    if (process.env.PERMITIR_RESERVA === '1') {
+      console.warn('PERMITIR_RESERVA=1: o deploy continua com a reserva. Desliga a variável quando a planilha voltar.');
+    } else {
+      console.warn('Na Vercel isto faz o deploy falhar de propósito: o site anterior continua no ar.');
+      process.exitCode = 2;
+    }
   }
 }
 
