@@ -347,6 +347,8 @@ function paginaEvento(e, slug, agora) {
   <link rel="preload" href="/fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/evento.css">
+  <!-- Google Analytics 4: só carrega depois de a pessoa aceitar no banner de cookies -->
+  <script src="/js/analytics.js" defer></script>
 
   <script type="application/ld+json">
 ${criarJsonLd(e, url, ini, fim, imagem)}
@@ -390,6 +392,7 @@ ${criarJsonLd(e, url, ini, fim, imagem)}
     <p><a href="/">Ver todos os eventos no Nearme</a></p>
     <p><a href="/#divulgar">Organizas eventos? Divulga aqui</a></p>
     <p><a href="/#privacidade">Política de Privacidade</a></p>
+    <p><button type="button" class="link-cookies" data-definicoes-cookies>Definições de cookies</button></p>
     <p>© ${ano} Nearme</p>
   </footer>
 </body>

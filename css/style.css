@@ -567,6 +567,46 @@ form label.consentimento a, .painel-texto a:not(.botao) { color: var(--laranja);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); animation: aparecer 0.2s ease;
 }
 
+/* ---------- 14b. Banner de cookies (js/analytics.js) ----------
+   Fica por cima do conteúdo mas ACIMA do menu de baixo (não o tapa).
+   "Recusar" e "Aceitar" têm exatamente o mesmo estilo: recusar não pode ser mais difícil (RGPD). */
+.banner-cookies {
+  position: fixed; z-index: 1500;
+  left: 12px; right: 12px;
+  bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 10px);
+  max-width: 560px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px 16px; border-radius: var(--raio-sm);
+  background: var(--superficie); color: var(--texto);
+  border: 1px solid var(--borda); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  animation: aparecer 0.2s ease;
+}
+.banner-cookies-texto { font-size: 0.85rem; line-height: 1.45; }
+.banner-cookies-texto a { color: var(--laranja); font-weight: 600; text-decoration: underline; }
+.banner-cookies-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.botao-cookies {
+  min-height: 44px; padding: 10px 16px;
+  border: 1px solid var(--borda); border-radius: 999px;
+  background: var(--superficie-2); color: var(--texto);
+  font-weight: 700; font-size: 0.95rem;
+}
+.botao-cookies:hover { border-color: var(--laranja); }
+/* nas páginas de evento não há menu de baixo */
+.pagina-evento .banner-cookies { bottom: calc(env(safe-area-inset-bottom) + 12px); }
+/* espaço no fim da página para o banner não tapar o rodapé */
+body.com-banner-cookies { padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 180px); }
+body.pagina-evento.com-banner-cookies { padding-bottom: calc(env(safe-area-inset-bottom) + 180px); }
+body[data-vista="mapa"].com-banner-cookies { padding-bottom: 0; }
+/* no Mapa (telemóvel), os botões de zoom e a atribuição sobem para cima do banner */
+body.com-banner-cookies[data-vista="mapa"] .leaflet-bottom { bottom: calc(var(--altura-banner, 180px) + 10px); }
+
+/* "Definições de cookies": um botão com aparência de link */
+.link-cookies {
+  padding: 0; border: 0; background: none;
+  color: var(--laranja); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+.rodape .link-cookies { text-decoration: none; }
+
 /* ---------- 15. Menu de baixo ---------- */
 .nav-baixo {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
@@ -665,6 +705,12 @@ form label.consentimento a, .painel-texto a:not(.botao) { color: var(--laranja);
   /* o menu flutuante ocupa 64px + 16px de margem: deixa espaço para o fim da página não ficar por baixo dele */
   body { padding-bottom: 112px; }
   body[data-vista="mapa"] { padding-bottom: 0; }
+  /* banner de cookies por cima da "pílula" do menu (64px + 16px de margem) */
+  .banner-cookies { bottom: 96px; }
+  body.com-banner-cookies { padding-bottom: 260px; }
+  body[data-vista="mapa"].com-banner-cookies { padding-bottom: 0; }
+  /* no computador o banner é estreito e centrado: não chega ao zoom (canto direito) */
+  body.com-banner-cookies[data-vista="mapa"] .leaflet-bottom { bottom: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -131,6 +131,8 @@
         <p>© <span id="ano"></span> Nearme · Feito em Portugal</p>
         <p><a href="#divulgar">Organizas eventos? Divulga aqui</a></p>
         <p><a href="#privacidade">Política de Privacidade</a></p>
+        <!-- Reabre o banner de cookies (js/analytics.js) -->
+        <p><button type="button" class="link-cookies" data-definicoes-cookies>Definições de cookies</button></p>
       </footer>
     </section>
 
@@ -148,7 +150,7 @@
         <h1>Recebe os melhores eventos da semana</h1>
         <p class="texto-2">Escolhemos o que vale a pena na tua cidade e enviamos-te por e-mail. Podes cancelar quando quiseres.</p>
 
-        <form data-lead novalidate data-sucesso="Obrigado! Já estás na lista. 🎉">
+        <form data-lead method="post" novalidate data-sucesso="Obrigado! Já estás na lista. 🎉">
           <input type="hidden" name="tipo" value="utilizador">
           <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
 
@@ -187,7 +189,7 @@
         <h1>Queres divulgar o teu evento?</h1>
         <p class="texto-2">Bares, salas de concertos, associações e promotores: deixa os teus dados e entramos em contacto. Nesta fase é grátis.</p>
 
-        <form data-lead novalidate data-sucesso="Recebemos o teu pedido! Vamos falar contigo em breve.">
+        <form data-lead method="post" novalidate data-sucesso="Recebemos o teu pedido! Vamos falar contigo em breve.">
           <input type="hidden" name="tipo" value="organizador">
           <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
 
@@ -235,7 +237,7 @@
       <div class="painel-form painel-texto">
         <span class="sobretitulo">Os teus dados</span>
         <h1>Política de Privacidade</h1>
-        <p class="texto-2">Última atualização: 12 de novembro de 2026</p>
+        <p class="texto-2">Última atualização: 15 de novembro de 2026</p>
 
         <h2>Quem somos</h2>
         <p>O Nearme é um site de eventos em mapa, feito em Portugal. Somos nós os responsáveis pelos dados que nos deixas. Para qualquer questão sobre os teus dados, escreve para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>.</p>
@@ -245,6 +247,7 @@
           <li><strong>Newsletter:</strong> e-mail, cidade e, se quiseres, o teu nome.</li>
           <li><strong>Pedido de divulgação:</strong> nome, e-mail, nome do espaço ou evento, cidade e, se quiseres, telefone e link.</li>
           <li>Em ambos os casos guardamos a data do pedido e o registo de que aceitaste esta política.</li>
+          <li><strong>Estatísticas de visitas:</strong> só se aceitares os cookies (ver “Cookies e estatísticas” abaixo).</li>
         </ul>
 
         <h2>Para que os usamos</h2>
@@ -254,10 +257,15 @@
         <p>Numa folha de cálculo do Google (Google Sheets), a que só a equipa do Nearme tem acesso. O site está alojado na Vercel. Estas empresas tratam os dados por nossa conta e podem guardá-los em servidores fora da União Europeia, com as garantias previstas na lei.</p>
 
         <h2>Cookies e estatísticas</h2>
-        <p>Não usamos cookies de publicidade. Contamos as visitas com o Vercel Web Analytics, que não usa cookies nem identifica quem visita o site. O teu navegador guarda uma cópia da lista de eventos, para o site abrir mais depressa, e, se um envio de formulário falhar, guarda esse pedido para tentar de novo.</p>
+        <p><strong>Google Analytics (só se aceitares).</strong> Usamos o Google Analytics para saber, em números totais e sem identificar ninguém, quantas pessoas visitam o site, que páginas e eventos veem e de onde chegam. Isto usa cookies de estatística, que só são colocados depois de carregares em “Aceitar” no aviso de cookies. Se carregares em “Recusar”, o Google Analytics não é carregado e não enviamos dados de estatística à Google. Não usamos o Google Analytics para publicidade nem o ligamos a contas Google.</p>
+        <p><strong>Podes mudar de ideias a qualquer momento.</strong> Carrega em <button type="button" class="link-cookies" data-definicoes-cookies>Definições de cookies</button> (também está no fundo de todas as páginas do site) e escolhe outra vez. Se recusares depois de teres aceitado, deixamos de recolher estatísticas e apagamos os cookies do Google Analytics do teu navegador. A cada 6 meses voltamos a perguntar-te.</p>
+        <p><strong>Google fora da União Europeia.</strong> Os dados do Google Analytics são tratados pela Google, que os pode guardar e tratar em servidores fora da União Europeia, incluindo nos Estados Unidos, com as garantias previstas na lei. Os dados ligados a cada visitante são apagados pela Google ao fim de 2 meses; depois disso ficam só totais anónimos.</p>
+        <p><strong>Vercel Web Analytics (sem cookies).</strong> Também contamos as visitas com o Vercel Web Analytics, que não usa cookies nem identifica quem visita o site.</p>
+        <p><strong>No teu navegador.</strong> Não usamos cookies de publicidade. O teu navegador guarda três coisas: a tua escolha sobre os cookies; uma cópia da lista de eventos, para o site abrir mais depressa; e, se o envio de um formulário falhar, esse pedido, para o voltar a enviar.</p>
 
         <h2>Durante quanto tempo</h2>
         <p>Enquanto quiseres receber a newsletter ou enquanto durar o contacto sobre o teu evento. Se pedires, apagamos os teus dados.</p>
+        <p>Os cookies do Google Analytics duram no máximo cerca de 13 meses no teu navegador (ou até os apagares ou recusares nas Definições de cookies).</p>
 
         <h2>Os teus direitos</h2>
         <p>Podes, a qualquer momento, pedir para ver, corrigir ou apagar os teus dados, e retirar o teu consentimento. Basta enviar um e-mail para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>. Também podes apresentar reclamação à Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener">cnpd.pt</a>).</p>
@@ -300,6 +308,8 @@
 
   <script src="js/fundo-mapa.js"></script>
   <script src="js/app.js"></script>
+  <!-- Google Analytics 4: só carrega depois de a pessoa aceitar no banner de cookies -->
+  <script src="js/analytics.js"></script>
   <!-- Vercel Web Analytics: conta as visitas (sem cookies). "async" = não atrasa a página -->
   <script async src="/_vercel/insights/script.js"></script>
 </body>
