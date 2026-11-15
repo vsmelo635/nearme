@@ -331,6 +331,7 @@ function paginaEvento(e, slug, agora) {
   <title>${esc(titulo)}</title>
   <meta name="description" content="${esc(descricao)}">
   <meta name="theme-color" content="#FF6A13">
+  <meta name="color-scheme" content="dark">
   <link rel="canonical" href="${esc(url)}">
   <link rel="icon" href="/img/marca/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/img/marca/nearme-icone-180.png">
@@ -349,6 +350,8 @@ function paginaEvento(e, slug, agora) {
   <link rel="stylesheet" href="/css/evento.css">
   <!-- Google Analytics 4: só carrega depois de a pessoa aceitar no banner de cookies -->
   <script src="/js/analytics.js" defer></script>
+  <!-- Vercel Web Analytics: conta as visitas (sem cookies). "async" = não atrasa a página -->
+  <script async src="/_vercel/insights/script.js"></script>
 
   <script type="application/ld+json">
 ${criarJsonLd(e, url, ini, fim, imagem)}
@@ -357,10 +360,7 @@ ${criarJsonLd(e, url, ini, fim, imagem)}
 <body class="pagina-evento">
   <header class="topo">
     <a href="/" class="logo" aria-label="Nearme — página inicial">
-      <picture>
-        <source srcset="/img/marca/nearme-logo-horizontal-escuro.svg?v=2" media="(prefers-color-scheme: dark)">
-        <img src="/img/marca/nearme-logo-horizontal-claro.svg?v=2" alt="Nearme" class="logo-img" width="362" height="100">
-      </picture>
+      <img src="/img/marca/nearme-logo-horizontal-escuro.svg?v=2" alt="Nearme" class="logo-img" width="362" height="100">
     </a>
   </header>
 

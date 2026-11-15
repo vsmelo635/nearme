@@ -16,7 +16,8 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* ---------- 1. Cores e medidas (tema claro) ---------- */
+/* ---------- 1. Cores e medidas ----------
+   O Nearme é SEMPRE escuro (marca preto e laranja), mesmo que o telemóvel/computador esteja em tema claro. */
 :root {
   /* cores da marca Nearme */
   --laranja: #FF6A13;   /* laranja principal */
@@ -26,37 +27,6 @@
   --laranja-suave: rgba(255, 106, 19, 0.12);
   --marca-escuro: #141414;
 
-  --fundo: #f6f6f7;
-  --superficie: #ffffff;
-  --superficie-2: #efeff2;
-  --texto: #111114;
-  --texto-2: #5d5d66;
-  --borda: rgba(0, 0, 0, 0.08);
-  --sombra: 0 6px 24px rgba(0, 0, 0, 0.08);
-
-  --raio: 20px;
-  --raio-sm: 14px;
-  --altura-topo: 64px;
-  --altura-nav: 68px;
-  --fonte: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-
-  color-scheme: light;
-}
-
-/* ---------- 2. Tema escuro (automático, segue o telemóvel) ---------- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --fundo: #141414;
-    --superficie: #1e1e1e;
-    --superficie-2: #292929;
-    --texto: #FFFFFF;
-    --texto-2: #A3A3A3;
-    --borda: rgba(255, 255, 255, 0.08);
-    --sombra: 0 6px 24px rgba(0, 0, 0, 0.45);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
   --fundo: #141414;
   --superficie: #1e1e1e;
   --superficie-2: #292929;
@@ -64,7 +34,14 @@
   --texto-2: #A3A3A3;
   --borda: rgba(255, 255, 255, 0.08);
   --sombra: 0 6px 24px rgba(0, 0, 0, 0.45);
-  color-scheme: dark;
+
+  --raio: 20px;
+  --raio-sm: 14px;
+  --altura-topo: 64px;
+  --altura-nav: 68px;
+  --fonte: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  color-scheme: dark;   /* barras de scroll, campos de formulário e calendário também em escuro */
 }
 
 /* ---------- 3. Base ---------- */

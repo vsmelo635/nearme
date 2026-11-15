@@ -8,11 +8,5 @@
   pointer-events: none; /* não atrapalha cliques */
 }
 
-/* no tema claro fica escondido (foi pensado para o fundo escuro) */
-:root[data-theme="light"] #fundo-mapa { display: none; }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) #fundo-mapa { display: none; }
-}
-
 /* na vista do mapa não precisa (o mapa cobre o ecrã todo) */
 body[data-vista="mapa"] #fundo-mapa { display: none; }
