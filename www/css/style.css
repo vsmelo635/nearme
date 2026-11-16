@@ -1,0 +1,695 @@
+/* =========================================================
+   Nearme — estilos (mobile primeiro)
+   As cores ficam todas em variáveis no :root. Para mudar a
+   cor da marca, basta trocar --laranja, --laranja-2 e --laranja-3.
+   ========================================================= */
+
+/* ---------- 0. Fonte (hospedada junto com o site, sem depender do Google) ----------
+   Um só arquivo "variável" cobre todos os pesos (400 a 800) e os acentos do português. */
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../fonts/plus-jakarta-sans.woff2") format("woff2-variations"),
+       url("../fonts/plus-jakarta-sans.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- 1. Cores e medidas ----------
+   O Nearme é SEMPRE escuro (marca preto e laranja), mesmo que o telemóvel/computador esteja em tema claro. */
+:root {
+  /* cores da marca Nearme */
+  --laranja: #FF6A13;   /* laranja principal */
+  --laranja-2: #FF8A1F; /* início do degradê (mais claro) */
+  --laranja-3: #F04A0C; /* fim do degradê (mais escuro) */
+  --degrade: linear-gradient(135deg, var(--laranja-2), var(--laranja-3));
+  --laranja-suave: rgba(255, 106, 19, 0.12);
+  --marca-escuro: #141414;
+
+  --fundo: #141414;
+  --superficie: #1e1e1e;
+  --superficie-2: #292929;
+  --texto: #FFFFFF;
+  --texto-2: #A3A3A3;
+  --borda: rgba(255, 255, 255, 0.08);
+  --sombra: 0 6px 24px rgba(0, 0, 0, 0.45);
+
+  --raio: 20px;
+  --raio-sm: 14px;
+  --altura-topo: 64px;
+  --altura-nav: 68px;
+  --fonte: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  color-scheme: dark;   /* barras de scroll, campos de formulário e calendário também em escuro */
+}
+
+/* ---------- 3. Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* ao saltar para um elemento, ele não fica escondido atrás do topo nem do menu de baixo */
+  scroll-padding-top: calc(var(--altura-topo) + 12px);
+  scroll-padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 24px);
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  background: var(--fundo);
+  color: var(--texto);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 16px);
+}
+body.sem-scroll { overflow: hidden; }
+
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+img { display: block; max-width: 100%; }
+
+:focus-visible { outline: 2px solid var(--laranja); outline-offset: 2px; }
+
+.icone {
+  width: 24px; height: 24px; flex-shrink: 0;
+  fill: none; stroke: currentColor; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.icone-sm { width: 18px; height: 18px; }
+.texto-2 { color: var(--texto-2); }
+
+/* ---------- 4. Topo ---------- */
+.topo {
+  position: sticky; top: 0; z-index: 1000;
+  height: var(--altura-topo);
+  display: flex; align-items: center; justify-content: space-between;
+  /* no computador, alinha o logo com o conteúdo (largura máx. 1100px) */
+  padding: 0 max(16px, calc((100% - 1100px) / 2 + 16px));
+  padding-top: env(safe-area-inset-top);
+  background: color-mix(in srgb, var(--fundo) 88%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.logo { display: flex; align-items: center; height: 40px; }
+.logo-img { height: 40px; width: auto; }
+/* logótipo em texto (reserva): "nearme" sempre em minúsculas */
+.logo-texto { display: none; align-items: center; gap: 6px; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; text-transform: lowercase; }
+.logo.sem-imagem .logo-img { display: none; }
+.logo.sem-imagem .logo-texto { display: flex; }
+.logo-simbolo { width: 32px; height: 32px; }
+.logo-simbolo path { fill: none; stroke: var(--laranja); stroke-width: 15; stroke-linecap: round; }
+.logo-simbolo circle { fill: var(--laranja); }
+
+/* Barra de busca no cabeçalho (entre o logo e o sininho) */
+.topo { gap: 10px; }
+.logo { flex-shrink: 0; }
+.busca {
+  flex: 1 1 auto; max-width: 420px; margin-left: auto;
+  display: flex; flex-direction: row; align-items: center; gap: 8px;
+  height: 42px; padding: 0 14px;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 999px;
+  color: var(--texto-2);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca:focus-within { border-color: var(--laranja); box-shadow: 0 0 0 3px var(--laranja-suave); }
+.busca .icone { color: var(--laranja); }
+.busca input {
+  flex: 1; min-width: 0; height: 100%; padding: 0;
+  border: 0; background: none; outline: none;
+  font-size: 16px; /* 16px evita o zoom automático no iPhone */
+  color: var(--texto);
+}
+.busca input, .busca input:focus { min-height: 0; border-radius: 0; outline: none; }
+.busca input::placeholder { color: var(--texto-2); }
+/* telemóvel: logo um pouco menor para sobrar espaço para a busca */
+@media (max-width: 480px) {
+  .logo, .logo-img { height: 32px; }
+  .busca { padding: 0 12px; }
+}
+.busca input::-webkit-search-cancel-button { cursor: pointer; }
+
+.botao-icone {
+  position: relative; width: 44px; height: 44px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: 50%;
+}
+.botao-icone:hover { background: var(--superficie-2); }
+.ponto-notificacao {
+  position: absolute; top: 9px; right: 10px; width: 9px; height: 9px;
+  border-radius: 50%; background: var(--laranja); border: 2px solid var(--fundo);
+}
+
+/* ---------- 5. Estrutura das vistas ---------- */
+main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+.vista { display: none; }
+.vista.ativa { display: block; animation: aparecer 0.25s ease; }
+@keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
+
+.secao-titulo {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 26px 0 12px;
+  scroll-margin-top: calc(var(--altura-topo) + 12px); /* não fica escondido debaixo do topo */
+}
+.secao-titulo h2 { font-size: 1.15rem; font-weight: 700; }
+.contador { font-size: 0.85rem; font-weight: 500; color: var(--texto-2); margin-left: 4px; }
+.ver-todas { display: inline-flex; align-items: center; gap: 4px; color: var(--laranja); font-size: 0.875rem; font-weight: 600; }
+
+/* ---------- 6. Botões ---------- */
+.botao {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 10px 18px;
+  border: 0; border-radius: 999px;
+  background: var(--laranja); color: #fff;
+  font-weight: 700; font-size: 0.95rem;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.botao:hover { background: var(--laranja-3); }
+.botao:active { transform: scale(0.97); }
+.botao-sec { background: var(--superficie-2); color: var(--texto); }
+.botao-sec:hover { background: var(--borda); }
+.botao-texto { background: transparent; color: var(--laranja); }
+.botao-texto:hover { background: var(--laranja-suave); }
+.botao-largo { width: 100%; }
+.botao .icone { width: 18px; height: 18px; }
+
+/* ---------- 7. Carrossel (hero) ---------- */
+.hero { position: relative; margin-top: 8px; }
+.hero-trilho {
+  min-height: 240px; /* guarda o espaço do carrossel enquanto carrega */
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  border-radius: var(--raio); scrollbar-width: none;
+}
+.hero-trilho::-webkit-scrollbar { display: none; }
+
+.slide {
+  position: relative; flex: 0 0 100%; scroll-snap-align: start;
+  min-height: 240px; padding: 22px 22px 40px;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+  color: #fff; overflow: hidden;
+}
+.slide-marca {
+  background:
+    radial-gradient(circle at 85% 15%, rgba(255, 138, 31, 0.95), transparent 42%),
+    radial-gradient(circle at 55% 120%, rgba(240, 74, 12, 0.85), transparent 55%),
+    radial-gradient(circle at 10% 0%, rgba(255, 106, 19, 0.35), transparent 40%),
+    var(--marca-escuro);
+}
+.slide .capa { position: absolute; inset: 0; }
+.slide .capa::after { background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.35) 70%, rgba(0, 0, 0, 0.2) 100%); }
+.slide-conteudo { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.slide h1, .slide h2 { font-size: clamp(1.7rem, 7vw, 2.6rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.02em; }
+.slide p { font-size: 0.95rem; opacity: 0.9; max-width: 34ch; }
+.slide .botao { margin-top: 10px; }
+.sobretitulo { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--laranja-2); }
+
+.hero-pontos { position: absolute; right: 18px; bottom: 16px; display: flex; gap: 6px; z-index: 2; }
+.ponto { width: 7px; height: 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.5); transition: width 0.2s, background 0.2s; }
+.ponto.ativo { width: 18px; background: var(--laranja); }
+
+/* ---------- 8. Categorias ---------- */
+.categorias {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 74px; gap: 10px;
+  overflow-x: auto; scrollbar-width: none; padding-bottom: 4px;
+  margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+}
+.categorias::-webkit-scrollbar { display: none; }
+.cat {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 0; border: 0; background: none;
+}
+.cat-icone {
+  width: 64px; height: 64px; display: grid; place-items: center;
+  border-radius: 18px; background: var(--superficie); border: 1px solid var(--borda);
+  color: var(--laranja); box-shadow: var(--sombra);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.cat-icone .icone { width: 28px; height: 28px; }
+.cat-nome { font-size: 0.76rem; color: var(--texto-2); font-weight: 500; }
+.cat:active .cat-icone { transform: scale(0.95); }
+.cat.ativo .cat-icone { background: var(--laranja); color: #fff; border-color: transparent; }
+.cat.ativo .cat-nome { color: var(--texto); font-weight: 700; }
+
+/* ---------- 9. Chips (filtros de data / cidade) ---------- */
+.chips {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -16px; padding: 2px 16px 4px;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  position: relative; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 8px 14px;
+  border: 1px solid var(--borda); border-radius: 999px;
+  background: var(--superficie); color: var(--texto);
+  font-size: 0.875rem; font-weight: 600; white-space: nowrap;
+}
+.chip.ativo { background: var(--laranja); border-color: transparent; color: #fff; }
+.chip .icone { color: var(--laranja); }
+.chip.ativo .icone { color: #fff; }
+/* o campo de data fica invisível por cima do chip "Escolher data" */
+.chip-data .input-data {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; border: 0;
+}
+.chip-select {
+  appearance: none; -webkit-appearance: none; padding-right: 34px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FF6A13' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+}
+.chip-select.ativo {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  /* correção: o fundo laranja do .chip.ativo apagava estas regras e a seta repetia-se várias vezes */
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+}
+/* lista que abre do seletor de cidade: cores normais, não laranja */
+.chip-select option { background: var(--superficie); color: var(--texto); }
+
+/* ---------- 10. Capas (imagem do evento ou cor por categoria) ---------- */
+.capa { position: relative; overflow: hidden; background: linear-gradient(135deg, #64748b, #1e293b); }
+.capa[data-cat="música"]      { background: linear-gradient(135deg, #ff6a2b, #6e1a04); }
+.capa[data-cat="festa"]       { background: linear-gradient(135deg, #ff3d7f, #4f0b33); }
+.capa[data-cat="cultura"]     { background: linear-gradient(135deg, #8b5cf6, #2a0f5c); }
+.capa[data-cat="gastronomia"] { background: linear-gradient(135deg, #f59e0b, #7c2d12); }
+.capa[data-cat="desporto"]    { background: linear-gradient(135deg, #10b981, #053d2e); }
+.capa-icone {
+  position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; color: #fff; opacity: 0.45;
+}
+.capa img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.capa::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* ---------- 11. Cartões de evento ---------- */
+/* Carrossel "Próximos eventos": 5 cartões por página.
+   No telemóvel ficam numa fila que se arrasta com o dedo; no computador cabem os 5 lado a lado. */
+.carrossel-eventos {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 44%; gap: 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin: 0 -16px; padding: 2px 16px 6px; scroll-padding: 0 16px;
+}
+.carrossel-eventos::-webkit-scrollbar { display: none; }
+.carrossel-eventos .cartao { scroll-snap-align: start; }
+/* mensagem "a carregar" ou "nenhum evento" ocupa a largura toda */
+.carrossel-eventos:has(> .vazio), .carrossel-eventos:has(> .carregando) { display: block; }
+
+.carrossel-nav {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 14px;
+}
+.seta-nav {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border: 1px solid var(--borda); border-radius: 50%;
+  background: var(--superficie); color: var(--laranja); box-shadow: var(--sombra);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.seta-nav:hover:not(:disabled) { background: var(--laranja); color: #fff; }
+.seta-nav:active:not(:disabled) { transform: scale(0.94); }
+.seta-nav:disabled { opacity: 0.35; cursor: default; box-shadow: none; }
+.pagina-info { min-width: 56px; text-align: center; font-size: 0.875rem; font-weight: 600; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+
+.cartao {
+  position: relative; display: block; width: 100%;
+  aspect-ratio: 4 / 5; padding: 0; border: 0; border-radius: 18px; overflow: hidden;
+  text-align: left; color: #fff; background: var(--superficie-2);
+  box-shadow: var(--sombra);
+}
+.cartao .capa { position: absolute; inset: 0; }
+.cartao:hover .capa img { transform: scale(1.05); }
+.cartao:active { transform: scale(0.98); }
+
+.selo-data {
+  position: absolute; top: 10px; left: 10px; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  min-width: 42px; padding: 4px 8px; border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  line-height: 1.1;
+}
+.selo-data b { font-size: 1.1rem; font-weight: 800; }
+.selo-data small { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; }
+
+.cartao-info { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 12px; }
+.cartao-info h3 {
+  font-size: 0.95rem; font-weight: 700; line-height: 1.2; margin-bottom: 4px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cartao-info p { font-size: 0.72rem; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cartao-info .meta { font-weight: 600; opacity: 1; margin-top: 2px; }
+
+/* cartões "fantasma" enquanto carrega: brilho a passar */
+.cartao.esqueleto {
+  background: linear-gradient(100deg, var(--superficie-2) 30%, var(--superficie) 50%, var(--superficie-2) 70%);
+  background-size: 300% 100%; animation: brilho 1.4s ease-in-out infinite; box-shadow: none;
+}
+@keyframes brilho { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.carregando, .vazio { grid-column: 1 / -1; padding: 32px 16px; text-align: center; color: var(--texto-2); }
+.vazio .botao { margin-top: 12px; }
+
+/* ---------- 12. Chamada newsletter + rodapé ---------- */
+.cta {
+  margin: 32px 0 8px; padding: 24px; border-radius: var(--raio); color: #fff;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 138, 31, 0.9), transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(240, 74, 12, 0.6), transparent 50%),
+    var(--marca-escuro);
+}
+.cta h3 { font-size: 1.2rem; font-weight: 800; line-height: 1.2; margin-bottom: 6px; }
+.cta p { font-size: 0.9rem; opacity: 0.85; margin-bottom: 14px; }
+.rodape { padding: 24px 0 8px; text-align: center; font-size: 0.8rem; color: var(--texto-2); }
+.rodape a { color: var(--laranja); font-weight: 600; }
+.rodape-logo { width: 180px; height: auto; margin: 0 auto 8px; }
+
+/* ---------- 13. Vista do mapa ---------- */
+body[data-vista="mapa"] { padding-bottom: 0; }
+#vista-mapa {
+  position: fixed; left: 0; right: 0;
+  top: calc(var(--altura-topo) + env(safe-area-inset-top));
+  bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom));
+}
+#vista-mapa.ativa { display: block; }
+/* o mapa é sempre escuro (Dark Matter), nos dois temas */
+#mapa-leaflet { position: absolute; inset: 0; background: var(--marca-escuro); }
+/* mensagem enquanto o Leaflet (biblioteca do mapa) está a ser baixado */
+#mapa-leaflet[data-estado="a-carregar"]::after,
+#mapa-leaflet[data-estado="erro"]::after {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center;
+  color: #A3A3A3; font-size: 0.95rem; font-weight: 600;
+}
+#mapa-leaflet[data-estado="a-carregar"]::after { content: "A carregar o mapa…"; }
+#mapa-leaflet[data-estado="erro"]::after { content: "Não foi possível carregar o mapa. Verifica a ligação e tenta de novo."; }
+/* Filtros do Mapa: dois botões ("Tudo" e "Qualquer dia") com listas que abrem na vertical */
+.mapa-filtros {
+  position: absolute; top: 12px; left: 12px; right: 12px; z-index: 900;
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; pointer-events: none;
+}
+.menu-filtro { position: relative; pointer-events: auto; }
+.menu-botao {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; max-width: 70vw; padding: 10px 14px 10px 16px;
+  border: 0; border-radius: 999px;
+  background: var(--laranja); color: #fff;
+  font-size: 0.95rem; font-weight: 700; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.menu-botao span { overflow: hidden; text-overflow: ellipsis; }
+.menu-botao:hover { background: var(--laranja-3); }
+.seta-menu { transition: transform 0.2s ease; }
+
+/* a lista: escondida até passar o rato (computador) ou tocar (classe .aberto) */
+.menu-lista {
+  position: absolute; top: 100%; left: 0;
+  padding-top: 8px; /* "ponte" invisível: o rato não perde o menu entre o botão e a lista */
+  display: none;
+}
+.menu-filtro.aberto .menu-lista { display: block; }
+.menu-filtro.aberto .seta-menu { transform: rotate(180deg); }
+@media (hover: hover) {
+  .menu-filtro:hover .menu-lista { display: block; }
+  .menu-filtro:hover .seta-menu { transform: rotate(180deg); }
+}
+.menu-caixa {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 220px; max-height: calc(100dvh - 260px); overflow-y: auto;
+  padding: 6px; border-radius: 16px;
+  background: #1e1e1e; border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  animation: aparecer 0.15s ease;
+}
+.menu-titulo {
+  padding: 8px 12px 4px; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #A3A3A3;
+}
+.menu-titulo:not(:first-child) { margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; }
+.menu-item {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 42px; padding: 8px 12px;
+  border: 0; border-radius: 10px; background: none; color: #fff;
+  font-size: 0.92rem; font-weight: 600; text-align: left; cursor: pointer;
+}
+.menu-item .icone { color: var(--laranja); }
+.menu-item:hover { background: #292929; }
+.menu-item.ativo { background: var(--laranja); }
+.menu-item.ativo .icone { color: #fff; }
+/* o campo de data fica invisível por cima do item "Escolher data" */
+.menu-data .input-data { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; }
+
+/* marcador em forma de gota */
+.marcador { background: none; border: 0; }
+.pino {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: var(--laranja); background-image: var(--degrade); border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+.pino svg {
+  width: 18px; height: 18px; transform: rotate(45deg);
+  fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round;
+}
+.leaflet-container { font-family: var(--fonte); background: var(--marca-escuro); }
+/* círculo que junta vários pinos (o número é quantos eventos há ali) */
+.grupo-marcadores { background: none; border: 0; }
+.grupo-marcadores span {
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--laranja); background-image: var(--degrade); color: #fff;
+  font-weight: 800; font-size: 0.95rem;
+  border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(255, 106, 19, 0.3), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+/* reserva sem chave da CARTO: escurece o mapa claro do OpenStreetMap */
+.mapa-escurecido { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
+
+/* controlos do Leaflet em versão escura (por cima do mapa escuro) */
+.leaflet-touch .leaflet-bar, .leaflet-bar {
+  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.leaflet-bar a, .leaflet-touch .leaflet-bar a {
+  width: 40px; height: 40px; line-height: 40px;
+  background: #1e1e1e; color: #fff; border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+.leaflet-bar a:hover, .leaflet-bar a:focus { background: #292929; color: var(--laranja); }
+.leaflet-bar a.leaflet-disabled { background: #1e1e1e; color: #5c5c5c; }
+
+.leaflet-container .leaflet-control-attribution {
+  font-size: 10px; background: rgba(20, 20, 20, 0.75); color: #A3A3A3;
+}
+.leaflet-container .leaflet-control-attribution a { color: var(--laranja); }
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #1e1e1e; color: #fff; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+.leaflet-popup-content-wrapper { border-radius: var(--raio-sm); }
+.leaflet-popup-content a { color: var(--laranja); }
+.leaflet-container a.leaflet-popup-close-button { color: #A3A3A3; }
+.leaflet-container a.leaflet-popup-close-button:hover { color: var(--laranja); }
+
+/* ---------- 14. Formulários ---------- */
+.painel-form {
+  max-width: 520px; margin: 16px auto; padding: 24px;
+  background: var(--superficie); border: 1px solid var(--borda);
+  border-radius: var(--raio); box-shadow: var(--sombra);
+}
+.painel-form h1 { font-size: 1.6rem; font-weight: 800; line-height: 1.15; margin: 6px 0 8px; letter-spacing: -0.01em; }
+.painel-form > p { margin-bottom: 20px; }
+form { display: flex; flex-direction: column; gap: 14px; }
+form label { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; font-weight: 600; }
+.opcional { font-weight: 400; color: var(--texto-2); }
+form input, form select {
+  width: 100%; min-height: 48px; padding: 12px 14px;
+  border: 1px solid var(--borda); border-radius: var(--raio-sm);
+  background: var(--superficie-2);
+  font-size: 16px; /* 16px evita o zoom automático no iPhone */
+}
+form input:focus, form select:focus { outline: 2px solid var(--laranja); outline-offset: 0; border-color: transparent; }
+form .botao { margin-top: 6px; }
+.armadilha { position: absolute; left: -9999px; opacity: 0; height: 0; }
+.form-msg { font-size: 0.9rem; font-weight: 600; min-height: 1.4em; text-align: center; }
+.form-msg.ok { color: #16a34a; }
+.form-msg.erro { color: #dc2626; }
+.form-msg.aviso { color: var(--laranja); }
+
+/* caixa de consentimento (RGPD): quadradinho à esquerda, texto à direita */
+form label.consentimento { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 500; color: var(--texto-2); line-height: 1.4; cursor: pointer; }
+form label.consentimento input {
+  width: 22px; height: 22px; min-height: 0; flex-shrink: 0; padding: 0; margin: 0;
+  accent-color: var(--laranja); cursor: pointer;
+}
+form label.consentimento a, .painel-texto a:not(.botao) { color: var(--laranja); font-weight: 600; text-decoration: underline; }
+
+/* página de texto (Política de Privacidade) */
+.painel-texto { max-width: 680px; }
+.painel-texto h2 { font-size: 1.05rem; font-weight: 700; margin: 22px 0 6px; }
+.painel-texto p, .painel-texto li { font-size: 0.95rem; }
+.painel-texto > p { margin-bottom: 0; }
+.painel-texto p + p { margin-top: 10px; }
+.painel-texto ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.painel-texto .botao { margin-top: 22px; }
+
+/* aviso curto que aparece em baixo (ex.: "Link copiado!") */
+.aviso-flutuante {
+  position: fixed; left: 50%; bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 20px); z-index: 3000;
+  transform: translateX(-50%); max-width: calc(100% - 32px);
+  padding: 10px 18px; border-radius: 999px;
+  background: var(--marca-escuro); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.9rem; font-weight: 600; text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); animation: aparecer 0.2s ease;
+}
+
+/* ---------- 14b. Banner de cookies (js/analytics.js) ----------
+   Fica por cima do conteúdo mas ACIMA do menu de baixo (não o tapa).
+   "Recusar" e "Aceitar" têm exatamente o mesmo estilo: recusar não pode ser mais difícil (RGPD). */
+.banner-cookies {
+  position: fixed; z-index: 1500;
+  left: 12px; right: 12px;
+  bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 10px);
+  max-width: 560px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px 16px; border-radius: var(--raio-sm);
+  background: var(--superficie); color: var(--texto);
+  border: 1px solid var(--borda); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+  animation: aparecer 0.2s ease;
+}
+.banner-cookies-texto { font-size: 0.85rem; line-height: 1.45; }
+.banner-cookies-texto a { color: var(--laranja); font-weight: 600; text-decoration: underline; }
+.banner-cookies-botoes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.botao-cookies {
+  min-height: 44px; padding: 10px 16px;
+  border: 1px solid var(--borda); border-radius: 999px;
+  background: var(--superficie-2); color: var(--texto);
+  font-weight: 700; font-size: 0.95rem;
+}
+.botao-cookies:hover { border-color: var(--laranja); }
+/* nas páginas de evento não há menu de baixo */
+.pagina-evento .banner-cookies { bottom: calc(env(safe-area-inset-bottom) + 12px); }
+/* espaço no fim da página para o banner não tapar o rodapé */
+body.com-banner-cookies { padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 180px); }
+body.pagina-evento.com-banner-cookies { padding-bottom: calc(env(safe-area-inset-bottom) + 180px); }
+body[data-vista="mapa"].com-banner-cookies { padding-bottom: 0; }
+/* no Mapa (telemóvel), os botões de zoom e a atribuição sobem para cima do banner */
+body.com-banner-cookies[data-vista="mapa"] .leaflet-bottom { bottom: calc(var(--altura-banner, 180px) + 10px); }
+
+/* "Definições de cookies": um botão com aparência de link */
+.link-cookies {
+  padding: 0; border: 0; background: none;
+  color: var(--laranja); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer;
+}
+.rodape .link-cookies { text-decoration: none; }
+
+/* ---------- 15. Menu de baixo ---------- */
+.nav-baixo {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
+  height: calc(var(--altura-nav) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--superficie); border-top: 1px solid var(--borda);
+}
+.nav-baixo a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-size: 0.7rem; font-weight: 600; color: var(--texto-2);
+}
+.nav-baixo a.ativo { color: var(--laranja); }
+.nav-baixo a.ativo .icone { fill: var(--laranja-suave); }
+
+/* ---------- 16. Detalhe do evento (folha) ---------- */
+.folha { position: fixed; inset: 0; z-index: 2000; }
+.folha-fundo { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); animation: aparecer 0.2s ease; }
+.folha-painel {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  max-height: 92dvh; overflow-y: auto;
+  background: var(--superficie); border-radius: 24px 24px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: subir 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes subir { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.folha-fechar {
+  position: absolute; top: 12px; right: 12px; z-index: 2;
+  width: 40px; height: 40px; display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: rgba(0, 0, 0, 0.5); color: #fff;
+}
+.folha-capa .capa { aspect-ratio: 16 / 10; }
+.folha-capa .capa::after { background: linear-gradient(180deg, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.35) 100%); }
+.folha-corpo { padding: 18px 20px 24px; }
+.tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--laranja-suave); color: var(--laranja);
+  font-size: 0.78rem; font-weight: 700;
+}
+.folha-corpo h2 { font-size: 1.45rem; font-weight: 800; line-height: 1.2; margin: 10px 0 14px; }
+.detalhes { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.detalhes li { display: flex; gap: 12px; align-items: flex-start; font-size: 0.92rem; }
+.detalhes .icone { color: var(--laranja); width: 22px; height: 22px; margin-top: 1px; }
+.detalhes small { color: var(--texto-2); font-size: 0.85rem; }
+.detalhe-texto { flex: 1; min-width: 0; }
+/* botão "Copiar" ao lado do endereço */
+.botao-copiar {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 12px; margin-top: -4px;
+  border: 1px solid var(--borda); border-radius: 999px;
+  background: var(--superficie-2); color: var(--texto);
+  font-size: 0.8rem; font-weight: 700;
+  transition: background 0.15s, color 0.15s;
+}
+.botao-copiar .icone { width: 16px; height: 16px; margin: 0; color: var(--laranja); }
+.botao-copiar:hover { background: var(--laranja-suave); }
+.botao-copiar.copiado { background: #16a34a; border-color: transparent; color: #fff; }
+.botao-copiar.copiado .icone { color: #fff; }
+.descricao { color: var(--texto-2); font-size: 0.95rem; margin-bottom: 20px; }
+.acoes { display: flex; flex-direction: column; gap: 10px; }
+.acoes .botao { width: 100%; }
+
+/* ---------- 17. Ecrãs maiores (tablet / computador) ---------- */
+@media (min-width: 700px) {
+  .carrossel-eventos { grid-auto-columns: 30%; gap: 14px; margin: 0; padding-left: 0; padding-right: 0; scroll-padding: 0; }
+  .slide { min-height: 300px; padding: 36px 36px 48px; }
+  .hero-trilho { min-height: 300px; }
+  .categorias { margin: 0; padding-left: 0; padding-right: 0; grid-auto-columns: 84px; }
+  .chips { margin: 0; padding-left: 0; padding-right: 0; }
+  .folha-painel {
+    left: 50%; right: auto; bottom: auto; top: 50%;
+    width: min(520px, calc(100% - 32px)); max-height: 88vh;
+    border-radius: 24px; transform: translate(-50%, -50%);
+    animation: surgir 0.22s ease;
+  }
+  @keyframes surgir {
+    from { opacity: 0; transform: translate(-50%, -46%); }
+    to   { opacity: 1; transform: translate(-50%, -50%); }
+  }
+  .folha-capa .capa { aspect-ratio: 16 / 8; }
+  .acoes { flex-direction: row; flex-wrap: wrap; }
+  .acoes .botao { width: auto; flex: 1 1 auto; }
+}
+
+@media (min-width: 1000px) {
+  /* computador: os 5 eventos da página cabem todos lado a lado */
+  .carrossel-eventos { grid-auto-flow: row; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; }
+  /* no computador o menu vira uma "pílula" flutuante */
+  .nav-baixo {
+    left: 50%; right: auto; bottom: 16px; width: 440px; height: 64px;
+    padding-bottom: 0; transform: translateX(-50%);
+    border: 1px solid var(--borda); border-radius: 999px; box-shadow: var(--sombra);
+  }
+  #vista-mapa { bottom: 0; }
+  /* o menu flutuante ocupa 64px + 16px de margem: deixa espaço para o fim da página não ficar por baixo dele */
+  body { padding-bottom: 112px; }
+  body[data-vista="mapa"] { padding-bottom: 0; }
+  /* banner de cookies por cima da "pílula" do menu (64px + 16px de margem) */
+  .banner-cookies { bottom: 96px; }
+  body.com-banner-cookies { padding-bottom: 260px; }
+  body[data-vista="mapa"].com-banner-cookies { padding-bottom: 0; }
+  /* no computador o banner é estreito e centrado: não chega ao zoom (canto direito) */
+  body.com-banner-cookies[data-vista="mapa"] .leaflet-bottom { bottom: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

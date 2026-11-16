@@ -1,0 +1,35 @@
+/* =========================================================
+   Nearme — páginas de evento (eventos/<slug>.html)
+   Arquivo: css/evento.css
+   Usa as classes do painel de detalhe (style.css) e só acrescenta o que falta.
+   ========================================================= */
+
+/* Sem o menu de baixo nestas páginas: não precisa do espaço extra no fim */
+body.pagina-evento { padding-bottom: env(safe-area-inset-bottom); }
+
+.pagina-evento main { max-width: 760px; padding-top: 8px; }
+
+.evento {
+  background: var(--superficie);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+
+.evento h1 { font-size: 1.6rem; font-weight: 800; line-height: 1.2; margin: 10px 0 14px; }
+
+/* Na página, a descrição pode ter vários parágrafos (quebras de linha da planilha) */
+.evento .descricao { white-space: pre-line; overflow-wrap: anywhere; }
+
+.aviso-passado {
+  margin-bottom: 14px; padding: 10px 14px;
+  border-radius: var(--raio-sm);
+  background: var(--superficie-2); color: var(--texto);
+  font-size: 0.9rem; font-weight: 600;
+}
+
+@media (min-width: 700px) {
+  .pagina-evento .folha-capa .capa { aspect-ratio: 16 / 8; }
+  .pagina-evento .acoes { flex-direction: row; flex-wrap: wrap; }
+  .pagina-evento .acoes .botao { width: auto; flex: 1 1 auto; }
+}

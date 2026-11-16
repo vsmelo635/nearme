@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nearme — Mais que eventos. Experiências.</title>
+  <meta name="description" content="Mais que eventos. Experiências. Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
+  <meta name="theme-color" content="#FF6A13">
+  <!-- O site é sempre escuro (ignora o tema claro do telemóvel/computador) -->
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- Ícones (separador do navegador e ecrã principal do telemóvel) -->
+  <link rel="icon" href="img/marca/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="img/marca/nearme-icone-180.png">
+
+  <!-- Endereço oficial: diz ao Google que o site "verdadeiro" é o www.nearme.pt (e não o .vercel.app) -->
+  <link rel="canonical" href="https://www.nearme.pt/">
+
+  <!-- Open Graph: o "cartão" que aparece quando alguém partilha o link (WhatsApp, Facebook...) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Nearme">
+  <meta property="og:locale" content="pt_PT">
+  <meta property="og:url" content="https://www.nearme.pt/">
+  <meta property="og:title" content="Nearme — Mais que eventos. Experiências.">
+  <meta property="og:description" content="Descobre o que está a acontecer perto de ti: concertos, festas, cultura, gastronomia e desporto em Portugal, tudo num mapa.">
+  <meta property="og:image" content="https://www.nearme.pt/img/marca/nearme-partilha.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Nearme — Mais que eventos. Experiências.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Fonte: arquivo próprio (fonts/), carregado logo no início para o texto não "piscar" -->
+  <link rel="preload" href="fonts/plus-jakarta-sans.woff2" as="font" type="font/woff2" crossorigin>
+
+  <!-- Nosso estilo. O Leaflet (mapa) só é carregado quando a pessoa abre o Mapa (ver js/app.js) -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/fundo-mapa.css">
+</head>
+<body data-vista="inicio">
+  <canvas id="fundo-mapa" aria-hidden="true"></canvas>
+
+  <!-- ===== TOPO ===== -->
+  <header class="topo">
+    <a href="#inicio" class="logo" aria-label="Nearme — página inicial">
+      <!-- Se a imagem do logo não carregar, aparece o logótipo em texto logo abaixo -->
+      <!-- logo para fundo escuro (texto branco): o site é sempre escuro -->
+      <img src="img/marca/nearme-logo-horizontal-escuro.svg?v=2" alt="Nearme" class="logo-img" width="362" height="100">
+      <span class="logo-texto" aria-hidden="true">
+        <svg viewBox="0 0 100 100" class="logo-simbolo"><path d="M57.42 82.15A33 33 0 1 1 82.75 45.98"/><circle cx="77.03" cy="68.93" r="9.3"/></svg>
+        nearme
+      </span>
+    </a>
+    <!-- Barra de busca (filtra por nome, local, cidade ou categoria) -->
+    <form class="busca" role="search" id="form-busca">
+      <svg viewBox="0 0 24 24" class="icone icone-sm" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="busca" placeholder="Procurar eventos" aria-label="Procurar eventos" autocomplete="off" enterkeyhint="search">
+    </form>
+    <a href="#novidades" class="botao-icone" aria-label="Receber novidades por e-mail">
+      <svg viewBox="0 0 24 24" class="icone"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="ponto-notificacao"></span>
+    </a>
+  </header>
+
+  <main>
+    <!-- ===== VISTA: INÍCIO ===== -->
+    <section id="vista-inicio" class="vista ativa" aria-label="Início">
+
+      <!-- Carrossel do topo -->
+      <div class="hero">
+        <!-- O primeiro slide já vem no HTML: aparece logo, sem esperar pelos eventos -->
+        <div class="hero-trilho" id="hero-trilho">
+          <div class="slide slide-marca">
+            <div class="slide-conteudo">
+              <span class="sobretitulo">Mais que eventos. Experiências.</span>
+              <h1>Descobre<br>o que te move</h1>
+              <p>Concertos, festas, cultura, gastronomia e desporto perto de ti — tudo num mapa.</p>
+              <a href="#mapa" class="botao">Explorar no mapa <svg class="icone icone-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            </div>
+          </div>
+        </div>
+        <div class="hero-pontos" id="hero-pontos"></div>
+      </div>
+
+      <div class="secao-titulo"><h2>Categorias</h2></div>
+      <div class="categorias" id="categorias-inicio"></div>
+
+      <!-- "Quando?" escondido da tela inicial (o filtro de data continua na tela do Mapa) -->
+      <div class="secao-titulo" hidden><h2>Quando?</h2></div>
+      <div class="chips" id="datas-inicio" hidden></div>
+
+      <div class="secao-titulo">
+        <h2>Próximos eventos <span class="contador" id="contador"></span></h2>
+        <a href="#mapa" class="ver-todas">Ver no mapa
+          <svg viewBox="0 0 24 24" class="icone icone-sm"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <!-- Carrossel de eventos: 5 de cada vez, com setas para passar -->
+      <div class="carrossel-eventos" id="lista-eventos">
+        <!-- Cartões "fantasma" enquanto os eventos carregam (guardam o espaço da lista) -->
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <div class="cartao esqueleto" aria-hidden="true"></div>
+        <span class="sr-only">A carregar eventos…</span>
+      </div>
+      <div class="carrossel-nav" id="carrossel-nav" hidden>
+        <button type="button" class="seta-nav" data-pagina="-1" aria-label="Eventos anteriores">
+          <svg viewBox="0 0 24 24" class="icone icone-sm"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <span class="pagina-info" id="pagina-info" aria-live="polite"></span>
+        <button type="button" class="seta-nav" data-pagina="1" aria-label="Próximos eventos">
+          <svg viewBox="0 0 24 24" class="icone icone-sm"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Chamada para a newsletter -->
+      <div class="cta">
+        <h3>Os melhores eventos da semana no teu e-mail</h3>
+        <p>Uma seleção curta dos melhores eventos. Sem spam.</p>
+        <a href="#novidades" class="botao">Quero receber</a>
+      </div>
+
+      <footer class="rodape">
+        <img src="img/marca/nearme-logo-vertical-escuro.svg" alt="Nearme — Mais que eventos. Experiências." class="rodape-logo" width="520" height="380" loading="lazy">
+        <p>© <span id="ano"></span> Nearme · Feito em Portugal</p>
+        <p><a href="#divulgar">Organizas eventos? Divulga aqui</a></p>
+        <p><a href="#privacidade">Política de Privacidade</a></p>
+        <!-- Reabre o banner de cookies (js/analytics.js) -->
+        <p><button type="button" class="link-cookies" data-definicoes-cookies>Definições de cookies</button></p>
+      </footer>
+    </section>
+
+    <!-- ===== VISTA: MAPA ===== -->
+    <section id="vista-mapa" class="vista" aria-label="Mapa de eventos">
+      <!-- Dois menus: "Tudo" (categorias) e "Qualquer dia" (datas + cidade). Abrem ao passar o rato ou tocar. -->
+      <div class="mapa-filtros" id="filtros-mapa"></div>
+      <div id="mapa-leaflet"></div>
+    </section>
+
+    <!-- ===== VISTA: NOVIDADES (lead de utilizador) ===== -->
+    <section id="vista-novidades" class="vista" aria-label="Receber novidades">
+      <div class="painel-form">
+        <span class="sobretitulo">Newsletter</span>
+        <h1>Recebe os melhores eventos da semana</h1>
+        <p class="texto-2">Escolhemos o que vale a pena na tua cidade e enviamos-te por e-mail. Podes cancelar quando quiseres.</p>
+
+        <form data-lead method="post" novalidate data-sucesso="Obrigado! Já estás na lista. 🎉">
+          <input type="hidden" name="tipo" value="utilizador">
+          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
+
+          <label><span>Nome <span class="opcional">(opcional)</span></span>
+            <input type="text" name="nome" autocomplete="given-name" placeholder="O teu nome">
+          </label>
+          <label>E-mail
+            <input type="email" name="email" required autocomplete="email" placeholder="nome@exemplo.pt">
+          </label>
+          <label>Cidade
+            <select name="cidade" required>
+              <option value="">Escolhe a tua cidade</option>
+              <option>Lisboa</option>
+              <option>Cascais</option>
+              <option>Oeiras</option>
+              <option>Porto</option>
+              <option>Aveiro</option>
+              <option>Outra</option>
+            </select>
+          </label>
+          <!-- Consentimento (RGPD): sem esta caixa marcada o formulário não é enviado -->
+          <label class="consentimento">
+            <input type="checkbox" name="consentimento" value="sim" required>
+            <span>Aceito receber a newsletter do Nearme e li a <a href="#privacidade">Política de Privacidade</a>.</span>
+          </label>
+          <button type="submit" class="botao botao-largo">Inscrever-me</button>
+          <p class="form-msg" role="status"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== VISTA: DIVULGAR (lead de organizador) ===== -->
+    <section id="vista-divulgar" class="vista" aria-label="Divulgar um evento">
+      <div class="painel-form">
+        <span class="sobretitulo">Para organizadores</span>
+        <h1>Queres divulgar o teu evento?</h1>
+        <p class="texto-2">Bares, salas de concertos, associações e promotores: deixa os teus dados e entramos em contacto. Nesta fase é grátis.</p>
+
+        <form data-lead method="post" novalidate data-sucesso="Recebemos o teu pedido! Vamos falar contigo em breve.">
+          <input type="hidden" name="tipo" value="organizador">
+          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
+
+          <label>Nome
+            <input type="text" name="nome" required autocomplete="name" placeholder="O teu nome">
+          </label>
+          <label>E-mail
+            <input type="email" name="email" required autocomplete="email" placeholder="nome@exemplo.pt">
+          </label>
+          <!-- Telefone (opcional). Aceita números de Portugal ou de outros países, com ou sem +351 -->
+          <label><span>Telefone <span class="opcional">(opcional)</span></span>
+            <input type="tel" name="telefone" autocomplete="tel" inputmode="tel"
+                   placeholder="+351 912 345 678" pattern="\+?[0-9 \(\)\-]{9,20}"
+                   title="Escreve só números (pode começar com +). Ex.: 912 345 678">
+          </label>
+          <label>Nome do espaço ou evento
+            <input type="text" name="local_nome" required placeholder="Ex.: Bar do Cais">
+          </label>
+          <label>Cidade
+            <select name="cidade" required>
+              <option value="">Escolhe a cidade</option>
+              <option>Lisboa</option>
+              <option>Cascais</option>
+              <option>Oeiras</option>
+              <option>Porto</option>
+              <option>Aveiro</option>
+              <option>Outra</option>
+            </select>
+          </label>
+          <label>Link (Instagram, site ou bilheteira)
+            <input type="url" name="link" placeholder="https://instagram.com/...">
+          </label>
+          <!-- Consentimento (RGPD): sem esta caixa marcada o formulário não é enviado -->
+          <label class="consentimento">
+            <input type="checkbox" name="consentimento" value="sim" required>
+            <span>Aceito que o Nearme me contacte sobre este pedido e li a <a href="#privacidade">Política de Privacidade</a>.</span>
+          </label>
+          <button type="submit" class="botao botao-largo">Enviar pedido</button>
+          <p class="form-msg" role="status"></p>
+        </form>
+      </div>
+    </section>
+    <!-- ===== VISTA: PRIVACIDADE ===== -->
+    <section id="vista-privacidade" class="vista" aria-label="Política de Privacidade">
+      <div class="painel-form painel-texto">
+        <span class="sobretitulo">Os teus dados</span>
+        <h1>Política de Privacidade</h1>
+        <p class="texto-2">Última atualização: 15 de novembro de 2026</p>
+
+        <h2>Quem somos</h2>
+        <p>O Nearme é um site de eventos em mapa, feito em Portugal. Somos nós os responsáveis pelos dados que nos deixas. Para qualquer questão sobre os teus dados, escreve para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>.</p>
+
+        <h2>Que dados recolhemos</h2>
+        <ul>
+          <li><strong>Newsletter:</strong> e-mail, cidade e, se quiseres, o teu nome.</li>
+          <li><strong>Pedido de divulgação:</strong> nome, e-mail, nome do espaço ou evento, cidade e, se quiseres, telefone e link.</li>
+          <li>Em ambos os casos guardamos a data do pedido e o registo de que aceitaste esta política.</li>
+          <li><strong>Estatísticas de visitas:</strong> só se aceitares os cookies (ver “Cookies e estatísticas” abaixo).</li>
+        </ul>
+
+        <h2>Para que os usamos</h2>
+        <p>Só para aquilo que pediste: enviar-te os eventos por e-mail ou entrar em contacto contigo sobre a divulgação do teu evento. Fazemo-lo com base no teu consentimento. Não vendemos nem cedemos os teus dados para publicidade de terceiros.</p>
+
+        <h2>Onde ficam guardados</h2>
+        <p>Numa folha de cálculo do Google (Google Sheets), a que só a equipa do Nearme tem acesso. O site está alojado na Vercel. Estas empresas tratam os dados por nossa conta e podem guardá-los em servidores fora da União Europeia, com as garantias previstas na lei.</p>
+
+        <h2>Cookies e estatísticas</h2>
+        <p><strong>Google Analytics (só se aceitares).</strong> Usamos o Google Analytics para saber, em números totais e sem identificar ninguém, quantas pessoas visitam o site, que páginas e eventos veem e de onde chegam. Isto usa cookies de estatística, que só são colocados depois de carregares em “Aceitar” no aviso de cookies. Se carregares em “Recusar”, o Google Analytics não é carregado e não enviamos dados de estatística à Google. Não usamos o Google Analytics para publicidade nem o ligamos a contas Google.</p>
+        <p><strong>Podes mudar de ideias a qualquer momento.</strong> Carrega em <button type="button" class="link-cookies" data-definicoes-cookies>Definições de cookies</button> (também está no fundo de todas as páginas do site) e escolhe outra vez. Se recusares depois de teres aceitado, deixamos de recolher estatísticas e apagamos os cookies do Google Analytics do teu navegador. A cada 6 meses voltamos a perguntar-te.</p>
+        <p><strong>Google fora da União Europeia.</strong> Os dados do Google Analytics são tratados pela Google, que os pode guardar e tratar em servidores fora da União Europeia, incluindo nos Estados Unidos, com as garantias previstas na lei. Os dados ligados a cada visitante são apagados pela Google ao fim de 2 meses; depois disso ficam só totais anónimos.</p>
+        <p><strong>Vercel Web Analytics (sem cookies).</strong> Também contamos as visitas com o Vercel Web Analytics, que não usa cookies nem identifica quem visita o site.</p>
+        <p><strong>No teu navegador.</strong> Não usamos cookies de publicidade. O teu navegador guarda três coisas: a tua escolha sobre os cookies; uma cópia da lista de eventos, para o site abrir mais depressa; e, se o envio de um formulário falhar, esse pedido, para o voltar a enviar.</p>
+
+        <h2>Durante quanto tempo</h2>
+        <p>Enquanto quiseres receber a newsletter ou enquanto durar o contacto sobre o teu evento. Se pedires, apagamos os teus dados.</p>
+        <p>Os cookies do Google Analytics duram no máximo cerca de 13 meses no teu navegador (ou até os apagares ou recusares nas Definições de cookies).</p>
+
+        <h2>Os teus direitos</h2>
+        <p>Podes, a qualquer momento, pedir para ver, corrigir ou apagar os teus dados, e retirar o teu consentimento. Basta enviar um e-mail para <a href="mailto:vsmelo412@gmail.com">vsmelo412@gmail.com</a>. Também podes apresentar reclamação à Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener">cnpd.pt</a>).</p>
+
+        <p><a href="#inicio" class="botao botao-sec">Voltar ao início</a></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== MENU DE BAIXO ===== -->
+  <nav class="nav-baixo" aria-label="Navegação principal">
+    <a href="#inicio" data-vista="inicio">
+      <svg viewBox="0 0 24 24" class="icone"><path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>
+      <span>Início</span>
+    </a>
+    <a href="#mapa" data-vista="mapa">
+      <svg viewBox="0 0 24 24" class="icone"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg>
+      <span>Mapa</span>
+    </a>
+    <a href="#novidades" data-vista="novidades">
+      <svg viewBox="0 0 24 24" class="icone"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      <span>Novidades</span>
+    </a>
+    <a href="#divulgar" data-vista="divulgar">
+      <svg viewBox="0 0 24 24" class="icone"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+      <span>Divulgar</span>
+    </a>
+  </nav>
+
+  <!-- ===== DETALHE DO EVENTO (painel que sobe de baixo) ===== -->
+  <div class="folha" id="folha" hidden>
+    <div class="folha-fundo" data-fechar></div>
+    <article class="folha-painel" role="dialog" aria-modal="true" aria-labelledby="folha-titulo">
+      <button type="button" class="folha-fechar" data-fechar aria-label="Fechar">
+        <svg viewBox="0 0 24 24" class="icone"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div id="folha-conteudo"></div>
+    </article>
+  </div>
+
+  <script src="js/fundo-mapa.js"></script>
+  <script src="js/app.js"></script>
+  <!-- Google Analytics 4: só carrega depois de a pessoa aceitar no banner de cookies -->
+  <script src="js/analytics.js"></script>
+  <!-- Vercel Web Analytics: conta as visitas (sem cookies). "async" = não atrasa a página -->
+  <script async src="/_vercel/insights/script.js"></script>
+</body>
+</html>
