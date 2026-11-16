@@ -6,7 +6,7 @@
 
 /* ---------- 1. CONFIGURAÇÃO ---------- */
 const CONFIG = {
-  // Link do Google Apps Script que grava os leads na aba "Leads" da planilha.
+  // Link do Google Apps Script que grava os leads na planilha privada "Nearme — Leads".
   // Enquanto estiver vazio, os formulários funcionam em "modo de teste" (dados vão só pro console).
   LEADS_URL: 'https://script.google.com/macros/s/AKfycbzUSVhD5TaAt3THfAObSN4adABAXeQ8ifH1pjhphbIJcisBtKt5Xqmz1Ym6GDtwjqy7/exec',
 
@@ -997,6 +997,12 @@ async function enviarFormulario(ev) {
   if (resultado === 'ok') {
     form.reset();
     mostrarMensagem(msg, form.dataset.sucesso, 'ok');
+  } else if (resultado === 'email') {
+    // O Google recusou o e-mail: não guardamos para reenviar, a pessoa corrige e envia de novo
+    mostrarMensagem(msg, 'Este e-mail não parece válido. Verifica-o e tenta de novo.', 'erro');
+    form.querySelector('[name="email"]')?.focus();
+  } else if (resultado === 'limite') {
+    mostrarMensagem(msg, 'Já recebemos vários pedidos com este e-mail. Tenta de novo daqui a uma hora.', 'erro');
   } else {
     // Não chegou: guarda no navegador e tenta de novo sozinho (ao voltar a internet ou na próxima visita)
     guardarLeadPendente(dados);
@@ -1005,8 +1011,9 @@ async function enviarFormulario(ev) {
   }
 }
 
-/* Envia um lead para o Google Apps Script (grava uma linha na aba "Leads").
-   Devolve 'ok' só quando o Google confirma que gravou; em qualquer outro caso devolve 'falhou'. */
+/* Envia um lead para o Google Apps Script (grava uma linha na planilha privada "Nearme — Leads").
+   Devolve 'ok' só quando o Google confirma que gravou; 'email' ou 'limite' quando o Google recusou
+   o lead de propósito (não adianta reenviar); em qualquer outro caso devolve 'falhou'. */
 async function enviarLead(dados) {
   if (!navigator.onLine) return 'falhou';              // sem internet: nem tenta
   const controlo = new AbortController();
@@ -1020,10 +1027,13 @@ async function enviarLead(dados) {
     });
     if (!resposta.ok) return 'falhou';                  // ex.: 404 ou 500 = não gravou
     // O nosso Apps Script responde {"ok":true} depois de gravar a linha.
-    // Se responder {"ok":false}, não gravou. (Se um dia a resposta deixar de ser JSON, confiamos no "200 OK".)
+    // {"ok":false,"erro":"email"|"limite"} = recusado de propósito; {"ok":false} sozinho = falha do Google.
+    // (Se um dia a resposta deixar de ser JSON, confiamos no "200 OK".)
     try {
       const corpo = await resposta.json();
-      if (corpo && corpo.ok === false) return 'falhou';
+      if (corpo && corpo.ok === false) {
+        return corpo.erro === 'email' || corpo.erro === 'limite' ? corpo.erro : 'falhou';
+      }
     } catch (_) { /* resposta sem JSON: fica valendo o 200 OK */ }
     return 'ok';
   } catch (erro) {
@@ -1061,7 +1071,8 @@ async function reenviarLeadsPendentes() {
   enviandoPendentes = true;
   const ficam = [];
   for (const lead of pendentes) {
-    if ((await enviarLead(lead)) !== 'ok') ficam.push(lead);
+    // só fica na lista o que falhou por erro de ligação; os recusados ('email'/'limite') saem
+    if ((await enviarLead(lead)) === 'falhou') ficam.push(lead);
   }
   gravarLeadsPendentes(ficam);
   enviandoPendentes = false;
