@@ -721,14 +721,63 @@ html.app .nav-baixo {
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   -webkit-user-select: none; user-select: none;
 }
+/* Como no protótipo v3: 3 abas (Início, Mapa, Guardados), ícone dentro de uma "pílula"
+   que fica laranja-escura na aba ativa, e o número laranja em cima de Guardados. */
+html.app .nav-baixo { grid-template-columns: repeat(3, 1fr); }
 html.app .nav-baixo a {
-  justify-content: flex-start; gap: 2px; padding-top: 6px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.01em;
+  justify-content: flex-start; gap: 2px; padding-top: 5px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
   color: #8e8e93; /* cinzento das abas inativas no iPhone */
 }
-html.app .nav-baixo a .icone { width: 26px; height: 26px; stroke-width: 1.8; }
+html.app .aba-icone {
+  position: relative; display: grid; place-items: center;
+  width: 46px; height: 28px; border-radius: 999px;
+  transition: background 0.15s;
+}
+html.app .nav-baixo a .icone { width: 22px; height: 22px; stroke-width: 1.9; fill: none; }
 html.app .nav-baixo a.ativo { color: var(--laranja); }
-html.app .nav-baixo a:active { opacity: 0.6; }
+html.app .nav-baixo a.ativo .aba-icone { background: rgba(255, 106, 19, 0.2); }
+html.app .nav-baixo a.ativo .icone { fill: none; }
+html.app .nav-baixo a:active .aba-icone { background: rgba(255, 255, 255, 0.08); }
+html.app .numero-aba {
+  position: absolute; top: -4px; left: 26px;
+  min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: var(--laranja); color: #fff;
+  font-size: 10px; font-weight: 800; line-height: 1;
+  box-shadow: 0 0 0 2px #141414; /* contorno da cor da barra, para o número "saltar" do ícone */
+}
+
+/* Mapa no ecrã todo, como no protótipo: sem o topo (logo e pesquisa) e com os filtros logo abaixo do notch */
+html.app body[data-vista="mapa"] .topo { display: none; }
+html.app #vista-mapa { top: 0; }
+html.app .mapa-filtros { top: calc(env(safe-area-inset-top) + 8px); left: 16px; right: 16px; flex-wrap: nowrap; }
+/* os dois filtros ficam sempre numa linha: se faltar espaço, o texto do 2.º encolhe com "…" */
+html.app .menu-filtro { flex-shrink: 0; }
+html.app .menu-filtro + .menu-filtro { flex-shrink: 1; min-width: 0; }
+html.app .menu-filtro + .menu-filtro .menu-botao { max-width: 100%; }
+/* "Tudo" laranja (como já é) e "Qualquer dia" escuro */
+html.app .menu-filtro + .menu-filtro .menu-botao {
+  background: rgba(28, 28, 30, 0.92); color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+html.app .menu-filtro + .menu-filtro .menu-botao:hover { background: rgba(44, 44, 46, 0.95); }
+
+/* Aba Guardados: grelha de cartões */
+#vista-guardados { padding-top: 4px; }
+.lista-guardados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 700px) { .lista-guardados { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.lista-guardados .vazio p + p { margin-top: 6px; font-size: 0.9rem; }
+
+/* Botão "Guardar" no detalhe do evento (fica laranja e preenchido quando está guardado) */
+.botao-guardar.guardado { color: var(--laranja); }
+.botao-guardar.guardado .icone { fill: currentColor; }
+
+/* Formulários de Novidades e Divulgar no fim do Início */
+html.app #vista-inicio .painel-form { margin: 28px auto 8px; }
+/* Sem Google Analytics na app: "Definições de cookies" não faz sentido */
+html.app p:has(> [data-definicoes-cookies]) { display: none; }
 /* No iPad também fica a barra em baixo (o site, no computador, usa uma "pílula" flutuante) */
 @media (min-width: 1000px) {
   html.app body { padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 16px); }

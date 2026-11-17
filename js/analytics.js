@@ -15,6 +15,9 @@
 (function () {
   'use strict';
 
+  // Na app iOS não usamos o Google Analytics (nem o banner de cookies): só no site.
+  if (document.documentElement.classList.contains('app')) return;
+
   const ID_MEDICAO = 'G-3Z9J7S8B1R';
   const CHAVE = 'nearme-consentimento';             // "sim" ou "nao"
   const CHAVE_DATA = 'nearme-consentimento-data';   // quando a pessoa escolheu (milissegundos)

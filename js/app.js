@@ -59,6 +59,7 @@ const ICONES = {
   copiar: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   certo: '<path d="M20 6 9 17l-5-5"/>',
   partilhar: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+  guardar: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
 };
 
 function icone(nome, classe = '') {
@@ -82,6 +83,8 @@ let eventoParaFocar = null;
 let eventoPendente = '';   // evento pedido pelo link (#evento=...) antes de os eventos carregarem
 let hashAntesDoEvento = ''; // para onde o endereço volta ao fechar o evento
 let veioDaReserva = false; // true = a planilha falhou e estamos a usar o eventos.json
+// true = está a correr dentro da app iOS (a classe "app" é posta por js/app-nativa.js, no <head>)
+const NA_APP = document.documentElement.classList.contains('app');
 
 /* ---------- 3. FUNÇÕES DE APOIO ---------- */
 
@@ -903,6 +906,7 @@ function abrirEvento(id) {
       <div class="acoes">
         <a class="botao" href="${comoChegar}" target="_blank" rel="noopener">${icone('navegar')} Como chegar</a>
         ${link ? `<a class="botao botao-sec" href="${esc(link)}" target="_blank" rel="noopener">${icone('externo')} Bilhetes / mais info</a>` : ''}
+        ${NA_APP ? botaoGuardar(e.id) : ''}
         <button type="button" class="botao botao-texto" data-ver-mapa="${esc(e.id)}">${icone('mapa')} Ver no mapa</button>
         <button type="button" class="botao botao-texto" data-partilhar="${esc(e.id)}">${icone('partilhar')} Partilhar</button>
       </div>
@@ -927,8 +931,110 @@ function fecharEvento(reporHash = true) {
   if (reporHash && idDoHash()) trocarHash(hashAntesDoEvento || '#' + document.body.dataset.vista);
 }
 
+/* ---------- 8b. GUARDADOS (só na app) ---------- */
+// Os eventos que a pessoa guarda ficam só no telemóvel (localStorage): uma lista com os ids.
+const CHAVE_GUARDADOS = 'nearme-guardados-v1';
+
+function lerGuardados() {
+  try {
+    const lista = JSON.parse(localStorage.getItem(CHAVE_GUARDADOS));
+    return Array.isArray(lista) ? lista.map(String) : [];
+  } catch (_) { return []; }
+}
+
+function gravarGuardados(lista) {
+  try { localStorage.setItem(CHAVE_GUARDADOS, JSON.stringify(lista)); return true; }
+  catch (_) { return false; }
+}
+
+function botaoGuardar(id) {
+  const guardado = lerGuardados().includes(id);
+  return `<button type="button" class="botao botao-sec botao-guardar${guardado ? ' guardado' : ''}" data-guardar="${esc(id)}" aria-pressed="${guardado}">
+          ${icone('guardar')}<span>${guardado ? 'Guardado' : 'Guardar'}</span>
+        </button>`;
+}
+
+// Botão "Guardar" do detalhe do evento: guarda ou tira dos guardados
+function alternarGuardado(botao) {
+  const id = botao.dataset.guardar;
+  const lista = lerGuardados();
+  const estava = lista.includes(id);
+  if (!gravarGuardados(estava ? lista.filter(x => x !== id) : [...lista, id])) {
+    avisar('Não foi possível guardar o evento.');
+    return;
+  }
+  botao.classList.toggle('guardado', !estava);
+  botao.setAttribute('aria-pressed', String(!estava));
+  botao.querySelector('span').textContent = estava ? 'Guardar' : 'Guardado';
+  renderGuardados();
+  avisar(estava ? 'Removido dos guardados.' : 'Evento guardado.');
+}
+
+// Aba "Guardados": a lista e o número laranja em cima do ícone.
+// Só conta os eventos que ainda estão na lista (os que já terminaram desaparecem sozinhos).
+function renderGuardados() {
+  if (!NA_APP) return;
+  const ids = lerGuardados();
+  const lista = eventos.filter(e => ids.includes(e.id));
+  const total = lista.length;
+
+  const numero = document.getElementById('numero-guardados');
+  numero.textContent = total > 99 ? '99+' : String(total);
+  numero.closest('a').setAttribute('aria-label', `Guardados (${total})`);
+  document.getElementById('contador-guardados').textContent = total ? `(${total})` : '';
+
+  document.getElementById('lista-guardados').innerHTML = total
+    ? lista.map(cartaoEvento).join('')
+    : `<div class="vazio">
+        <p>Ainda não guardaste nenhum evento.</p>
+        <p>Abre um evento e toca em “Guardar” para o encontrares aqui.</p>
+        <a href="#inicio" class="botao botao-sec">Explorar eventos</a>
+      </div>`;
+}
+
+/* Prepara a página para a app (só corre dentro da app; o site fica como está):
+   - barra de abas com Início, Mapa e Guardados (como no protótipo);
+   - os formulários de Novidades e Divulgar passam para o fim do Início;
+   - na Política de Privacidade, explica o que muda na app (sem Google Analytics). */
+function prepararApp() {
+  const nav = document.querySelector('.nav-baixo');
+  nav.querySelectorAll('[data-vista="novidades"], [data-vista="divulgar"]').forEach(a => a.remove());
+  nav.insertAdjacentHTML('beforeend', `
+    <a href="#guardados" data-vista="guardados">
+      ${icone('guardar')}<span class="numero-aba" id="numero-guardados" aria-hidden="true">0</span>
+      <span>Guardados</span>
+    </a>`);
+  // cada ícone fica dentro de uma "pílula" (fica laranja na aba ativa)
+  nav.querySelectorAll('a').forEach(a => {
+    const pilula = document.createElement('span');
+    pilula.className = 'aba-icone';
+    a.querySelector('svg').before(pilula);
+    pilula.append(...a.querySelectorAll('svg, .numero-aba'));
+  });
+
+  document.getElementById('vista-mapa').insertAdjacentHTML('afterend', `
+    <section id="vista-guardados" class="vista" aria-label="Eventos guardados">
+      <div class="secao-titulo"><h2>Guardados <span class="contador" id="contador-guardados"></span></h2></div>
+      <div class="lista-guardados" id="lista-guardados"></div>
+    </section>`);
+
+  // Formulários de leads no fim do Início (a chamada "Quero receber" deixa de ser precisa: o formulário está logo ali)
+  const inicio = document.getElementById('vista-inicio');
+  inicio.querySelector('.cta')?.remove();
+  const rodape = inicio.querySelector('.rodape');
+  ['novidades', 'divulgar'].forEach(nome => {
+    const painel = document.querySelector(`#vista-${nome} .painel-form`);
+    painel.id = 'app-' + nome;
+    rodape.before(painel);
+  });
+
+  const titulo = [...document.querySelectorAll('#vista-privacidade h2')].find(h => h.textContent.includes('Cookies'));
+  titulo?.insertAdjacentHTML('afterend',
+    '<p><strong>Na app.</strong> A app do Nearme não usa o Google Analytics nem cookies de estatística. Os eventos que guardas ficam só no teu telemóvel: não os recebemos.</p>');
+}
+
 /* ---------- 9. NAVEGAÇÃO ENTRE "PÁGINAS" (#inicio, #mapa…) ---------- */
-const VISTAS = ['inicio', 'mapa', 'novidades', 'divulgar', 'privacidade'];
+const VISTAS = ['inicio', 'mapa', 'novidades', 'divulgar', 'privacidade', ...(NA_APP ? ['guardados'] : [])];
 
 function mostrarVista() {
   // Link direto de um evento (#evento=...): fica na vista atual e abre o evento por cima
@@ -945,7 +1051,14 @@ function mostrarVista() {
   if (!folha.hidden) fecharEvento(false); // o endereço mudou com um evento aberto: fecha-o
 
   const pedida = location.hash.slice(1);
-  const vista = VISTAS.includes(pedida) ? pedida : 'inicio';
+  let vista = VISTAS.includes(pedida) ? pedida : 'inicio';
+  // na app, Novidades e Divulgar estão no fim do Início: abre o Início e desce até ao formulário
+  let formulario = null;
+  if (NA_APP && (vista === 'novidades' || vista === 'divulgar')) {
+    formulario = document.getElementById('app-' + vista);
+    vista = 'inicio';
+    trocarHash('#inicio'); // assim, tocar outra vez no mesmo link volta a descer até ao formulário
+  }
 
   document.querySelectorAll('.vista').forEach(s => s.classList.toggle('ativa', s.id === 'vista-' + vista));
   document.querySelectorAll('.nav-baixo a').forEach(a => {
@@ -955,8 +1068,10 @@ function mostrarVista() {
   });
   document.body.dataset.vista = vista;
   window.scrollTo(0, 0);
+  formulario?.scrollIntoView({ block: 'start' });
 
   if (vista === 'mapa') abrirMapa();
+  if (vista === 'guardados') renderGuardados();
 }
 
 /* ---------- 10. ATUALIZAR TUDO QUANDO UM FILTRO MUDA ---------- */
@@ -967,6 +1082,7 @@ function atualizar() {
   renderFiltrosData();
   renderLista();
   desenharMarcadores();
+  renderGuardados();
 }
 
 /* ---------- 11. FORMULÁRIOS (leads) ---------- */
@@ -1105,7 +1221,7 @@ document.addEventListener('click', ev => {
     return;
   }
 
-  const alvo = ev.target.closest('[data-copiar], [data-partilhar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
+  const alvo = ev.target.closest('[data-guardar], [data-copiar], [data-partilhar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
   if (!alvo) return;
 
   if (alvo.dataset.pagina) { mudarPagina(Number(alvo.dataset.pagina)); return; }
@@ -1116,6 +1232,7 @@ document.addEventListener('click', ev => {
     return;
   }
   if (alvo.hasAttribute('data-fechar')) { fecharEvento(); return; }
+  if (alvo.dataset.guardar) { alternarGuardado(alvo); return; }
   if (alvo.hasAttribute('data-copiar')) { copiarEndereco(alvo); return; }
   if (alvo.dataset.partilhar) { partilharEvento(alvo.dataset.partilhar); return; }
 
@@ -1199,6 +1316,7 @@ document.addEventListener('error', ev => {
 
 /* ---------- 13. INÍCIO ---------- */
 async function iniciar() {
+  if (NA_APP) prepararApp();
   document.getElementById('ano').textContent = new Date().getFullYear();
 
   // o logo pode ter falhado antes deste script carregar
