@@ -30,3 +30,6 @@ COMO-ADICIONAR-EVENTOS.md
 # Se correres o gerador no computador, os arquivos ficam só aí, para conferires.
 eventos/
 sitemap.xml
+
+# App iOS: a pasta www/ é criada pelo "npm run app" (cópia do site). Não vai para o Git.
+www/

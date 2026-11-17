@@ -29,3 +29,12 @@ apps-script/
 .env*
 PROMPT-REBRANDING-NEARME.md
 imagens-eventos.csv
+
+# App iOS (Capacitor): não faz parte do site. A pasta www/ é uma cópia do site para a app.
+# package.json só tem as ferramentas da app; sem ele a Vercel não perde tempo com "npm install".
+www/
+ios/
+node_modules/
+capacitor.config.json
+package.json
+package-lock.json

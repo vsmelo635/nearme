@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "app": "node scripts/app-copiar.js && npx cap sync ios",
+    "app:icones": "node scripts/app-icones.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,10 @@
   "dependencies": {
     "@capacitor/cli": "^8.6.2",
     "@capacitor/core": "^8.6.2",
-    "@capacitor/ios": "^8.6.2"
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5"
   }
 }

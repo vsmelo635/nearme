@@ -693,3 +693,48 @@ body.com-banner-cookies[data-vista="mapa"] .leaflet-bottom { bottom: calc(var(--
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- 18. App iOS (só dentro da app: <html class="app">, ver js/app-nativa.js) ---------- */
+/* No site nearme.pt nada disto se aplica. */
+html.app {
+  --altura-nav: 50px; /* altura da barra de abas do iPhone (sem a zona do "risco" de baixo) */
+  -webkit-tap-highlight-color: transparent;
+  /* ao saltar para uma secção, o título não fica escondido debaixo do topo (que agora inclui o notch) */
+  scroll-padding-top: calc(var(--altura-topo) + env(safe-area-inset-top) + 12px);
+}
+html.app .secao-titulo { scroll-margin-top: calc(var(--altura-topo) + env(safe-area-inset-top) + 12px); }
+/* Safe area: notch em cima e risco em baixo (o iPhone fica sempre na vertical: ver ios/App/App/Info.plist) */
+html.app .topo {
+  /* a altura do topo conta com a zona do notch (senão o logo e a pesquisa ficam espremidos lá em cima) */
+  height: calc(var(--altura-topo) + env(safe-area-inset-top));
+  padding-left: max(16px, env(safe-area-inset-left), calc((100% - 1100px) / 2 + 16px));
+  padding-right: max(16px, env(safe-area-inset-right), calc((100% - 1100px) / 2 + 16px));
+}
+/* Barra de abas fixa em baixo, estilo iPhone: translúcida, com desfoque e linha fina por cima */
+html.app .nav-baixo {
+  left: 0; right: 0; bottom: 0; width: auto; transform: none;
+  height: calc(var(--altura-nav) + env(safe-area-inset-bottom));
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  border: 0; border-top: 0.5px solid rgba(255, 255, 255, 0.16); border-radius: 0; box-shadow: none;
+  background: rgba(20, 20, 20, 0.82);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  -webkit-user-select: none; user-select: none;
+}
+html.app .nav-baixo a {
+  justify-content: flex-start; gap: 2px; padding-top: 6px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.01em;
+  color: #8e8e93; /* cinzento das abas inativas no iPhone */
+}
+html.app .nav-baixo a .icone { width: 26px; height: 26px; stroke-width: 1.8; }
+html.app .nav-baixo a.ativo { color: var(--laranja); }
+html.app .nav-baixo a:active { opacity: 0.6; }
+/* No iPad também fica a barra em baixo (o site, no computador, usa uma "pílula" flutuante) */
+@media (min-width: 1000px) {
+  html.app body { padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 16px); }
+  html.app body[data-vista="mapa"] { padding-bottom: 0; }
+  html.app #vista-mapa { bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom)); }
+  html.app .banner-cookies { bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 20px); }
+  html.app body.com-banner-cookies { padding-bottom: calc(var(--altura-nav) + env(safe-area-inset-bottom) + 200px); }
+  html.app body[data-vista="mapa"].com-banner-cookies { padding-bottom: 0; }
+}

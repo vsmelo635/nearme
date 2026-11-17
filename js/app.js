@@ -204,7 +204,9 @@ async function obterDados() {
     try {
       const url = new URL(CONFIG.PLANILHA_CSV_URL);
       url.searchParams.set('_', Date.now()); // evita pegar uma versão antiga guardada
-      const resposta = await fetch(url, { cache: 'no-store' });
+      // rede muito fraca (ex.: telemóvel no metro): desiste ao fim de 10 s e usa a reserva
+      const limite = typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(10000) : undefined;
+      const resposta = await fetch(url, { cache: 'no-store', signal: limite });
       if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
       veioDaReserva = false;
       return lerCSV(await resposta.text());
@@ -623,8 +625,9 @@ function carregarLeaflet() {
   if (window.L && L.markerClusterGroup) return Promise.resolve();
   if (promessaLeaflet) return promessaLeaflet; // já está a ser baixado
   promessaLeaflet = (async () => {
-    carregarArquivo('css', LEAFLET.css, LEAFLET.cssHash);
-    carregarArquivo('css', LEAFLET.grupoCss, LEAFLET.grupoCssHash);
+    // o CSS não bloqueia: se falhar (ex.: sem internet), o erro do JS logo abaixo já mostra o aviso no mapa
+    carregarArquivo('css', LEAFLET.css, LEAFLET.cssHash).catch(erro => console.warn(erro));
+    carregarArquivo('css', LEAFLET.grupoCss, LEAFLET.grupoCssHash).catch(erro => console.warn(erro));
     if (!window.L) await carregarArquivo('js', LEAFLET.js, LEAFLET.jsHash);
     // o agrupador só funciona depois do Leaflet; se falhar, o mapa abre na mesma, sem agrupar
     try { await carregarArquivo('js', LEAFLET.grupoJs, LEAFLET.grupoJsHash); }
@@ -749,6 +752,8 @@ let idEventoAberto = ''; // evento que está no painel agora ('' = painel fechad
 let promessaPaginas = null;
 function paginasDosEventos() {
   if (!promessaPaginas) {
+    // na app iOS as páginas dos eventos não vão dentro da app: não há link a mostrar
+    if (document.documentElement.classList.contains('app')) return (promessaPaginas = Promise.resolve({}));
     promessaPaginas = fetch('/eventos/paginas.json', { cache: 'no-cache' })
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
@@ -799,7 +804,11 @@ async function copiarTexto(texto) {
 
 // Link direto de um evento, ex.: https://www.nearme.pt/#evento=ne-053
 function linkDoEvento(id) {
-  return `${location.origin}${location.pathname}#evento=${encodeURIComponent(id)}`;
+  // na app o endereço é "capacitor://localhost", que ninguém consegue abrir: partilha o link do site
+  const base = document.documentElement.classList.contains('app')
+    ? 'https://www.nearme.pt/'
+    : `${location.origin}${location.pathname}`;
+  return `${base}#evento=${encodeURIComponent(id)}`;
 }
 
 // Lê o id do evento que está no endereço (#evento=...). Devolve '' se não houver.
