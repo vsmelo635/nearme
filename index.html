@@ -148,7 +148,7 @@
 
         <form data-lead method="post" novalidate data-sucesso="Obrigado! Já estás na lista. 🎉">
           <input type="hidden" name="tipo" value="utilizador">
-          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
+          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off" aria-hidden="true">
 
           <label><span>Nome <span class="opcional">(opcional)</span></span>
             <input type="text" name="nome" autocomplete="given-name" placeholder="O teu nome">
@@ -187,7 +187,7 @@
 
         <form data-lead method="post" novalidate data-sucesso="Recebemos o teu pedido! Vamos falar contigo em breve.">
           <input type="hidden" name="tipo" value="organizador">
-          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off">
+          <input type="text" name="_gotcha" class="armadilha" tabindex="-1" autocomplete="off" aria-hidden="true">
 
           <label>Nome
             <input type="text" name="nome" required autocomplete="name" placeholder="O teu nome">
