@@ -774,6 +774,19 @@ html.app .menu-filtro + .menu-filtro .menu-botao:hover { background: rgba(44, 44
 .botao-guardar.guardado { color: var(--laranja); }
 .botao-guardar.guardado .icone { fill: currentColor; }
 
+/* Aviso curto ("Evento guardado.", "Link copiado!"): nunca bloqueia toques.
+   Com o detalhe do evento aberto, aparece em cima (por baixo do notch) para não tapar os botões. */
+html.app .aviso-flutuante { pointer-events: none; width: max-content; } /* max-content: não quebra em 2 linhas no ecrã de 320 px */
+html.app body.sem-scroll .aviso-flutuante { top: calc(env(safe-area-inset-top) + 48px); bottom: auto; } /* um pouco abaixo do X do detalhe */
+
+/* Ecrãs pequenos (iPhone SE, 320 px): logo um pouco menor e espaços mais curtos, para "Pesquisar" caber */
+@media (max-width: 360px) {
+  html.app .topo { gap: 6px; }
+  html.app .logo, html.app .logo-img { height: 26px; }
+  html.app .busca { padding: 0 10px; gap: 6px; }
+  html.app .botao-icone { width: 40px; }
+}
+
 /* Formulários de Novidades e Divulgar no fim do Início */
 html.app #vista-inicio .painel-form { margin: 28px auto 8px; }
 /* Sem Google Analytics na app: "Definições de cookies" não faz sentido */

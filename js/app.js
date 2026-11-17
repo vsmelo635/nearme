@@ -249,8 +249,14 @@ function prepararEventos(dados) {
     .filter(e => e && String(e.nome || '').trim())  // linha sem nome = ignorada
     .map((e, i) => {
       const inicio = lerData(e.data_inicio);
+      let fimPlanilha = lerData(e.data_fim);
+      // data_fim antes de data_inicio é engano na planilha: ignoramos o fim
+      if (fimPlanilha && inicio && fimPlanilha < inicio) {
+        console.warn('Evento com data_fim antes de data_inicio (contamos 3 horas de duração):', e.nome);
+        fimPlanilha = null;
+      }
       // se não tiver data_fim, consideramos 3 horas de duração
-      const fim = lerData(e.data_fim) || (inicio ? new Date(inicio.getTime() + 3 * 36e5) : null);
+      const fim = fimPlanilha || (inicio ? new Date(inicio.getTime() + 3 * 36e5) : null);
       const cat = CATEGORIAS.find(c => normalizar(c.id) === normalizar(e.categoria));
       return {
         ...e,
@@ -834,7 +840,7 @@ function avisar(texto) {
   el.setAttribute('role', 'status');
   el.textContent = texto;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2600);
+  setTimeout(() => el.remove(), NA_APP ? 1500 : 2600); // na app, mais curto
 }
 
 // Botão "Partilhar": no telemóvel abre o menu de partilha (WhatsApp, Instagram...); no computador copia o link
@@ -1266,7 +1272,7 @@ document.addEventListener('click', ev => {
 
 /* Barra de busca: filtra enquanto a pessoa escreve */
 const campoBusca = document.getElementById('busca');
-if (window.matchMedia('(max-width: 480px)').matches) campoBusca.placeholder = 'Procurar'; // texto curto no telemóvel
+if (window.matchMedia('(max-width: 480px)').matches) campoBusca.placeholder = NA_APP ? 'Pesquisar' : 'Procurar'; // texto curto no telemóvel
 let esperaBusca = null;
 campoBusca.addEventListener('input', () => {
   clearTimeout(esperaBusca);

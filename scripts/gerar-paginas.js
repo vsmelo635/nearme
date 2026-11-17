@@ -217,10 +217,12 @@ function dataISO(d) {
 // Momento real (para comparar com "agora")
 function momentoReal(d) { return new Date(d.getTime() - desvioLisboa(d) * 60000); }
 
-// Fim do evento; sem data_fim, 3 horas de duração (mesma regra do site)
+// Fim do evento; sem data_fim (ou com data_fim antes do início), 3 horas de duração (mesma regra do site)
 function fimDoEvento(e) {
   const ini = lerData(e.data_inicio);
-  return lerData(e.data_fim) || (ini ? new Date(ini.getTime() + 3 * 36e5) : null);
+  const fim = lerData(e.data_fim);
+  if (fim && ini && fim < ini) return new Date(ini.getTime() + 3 * 36e5);
+  return fim || (ini ? new Date(ini.getTime() + 3 * 36e5) : null);
 }
 
 function jaAcabou(e, agora) {
