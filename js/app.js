@@ -673,7 +673,13 @@ async function abrirMapa() {
 function iniciarMapa() {
   if (mapa || typeof L === 'undefined') return;
 
-  mapa = L.map('mapa-leaflet', { zoomControl: false }).setView(CONFIG.CENTRO_PORTUGAL, CONFIG.ZOOM_INICIAL);
+  // O mapa fica limitado a Portugal continental: não dá para afastar além do país nem arrastar para fora
+  mapa = L.map('mapa-leaflet', {
+    zoomControl: false,
+    minZoom: 6,
+    maxBounds: [[36.8, -9.7], [42.2, -6.0]],
+    maxBoundsViscosity: 1.0,
+  }).setView(CONFIG.CENTRO_PORTUGAL, CONFIG.ZOOM_INICIAL);
   L.control.zoom({ position: 'bottomright' }).addTo(mapa);
   const osm = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
   if (CONFIG.CARTO_CHAVE) {
