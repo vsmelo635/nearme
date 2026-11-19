@@ -3,6 +3,7 @@
 //
 // O que vai para a app: index.html, css/, js/, img/, fonts/ e data/eventos.json
 // (o eventos.json é a reserva para quando não há internet; com internet a app lê a planilha).
+// Só vão estas pastas: a pasta prototipos/ (referência dos protótipos) nunca entra na app.
 
 const fs = require('fs');
 const path = require('path');
@@ -34,5 +35,11 @@ if (html.includes('/_vercel/insights/')) {
   process.exit(1);
 }
 fs.writeFileSync(path.join(DESTINO, 'index.html'), html);
+
+// garantia: nada dos protótipos dentro da app
+if (fs.existsSync(path.join(DESTINO, 'prototipos'))) {
+  console.error('A pasta prototipos/ foi parar a www/. Revê scripts/app-copiar.js.');
+  process.exit(1);
+}
 
 console.log('Site copiado para www/. A seguir: npx cap sync ios');

@@ -15,6 +15,9 @@ COMO-ADICIONAR-EVENTOS.md
 img/nearme-logo-preview.png
 img/marca/nearme-logo-preview.png
 
+# Protótipos aprovados (só referência para a app; ficam no Git, não vão para o site)
+prototipos/
+
 # Código do Apps Script (é colado na planilha, não faz parte do site)
 apps-script/
 

@@ -787,8 +787,10 @@ html.app body.sem-scroll .aviso-flutuante { top: calc(env(safe-area-inset-top) +
   html.app .botao-icone { width: 40px; }
 }
 
-/* Formulários de Novidades e Divulgar no fim do Início */
-html.app #vista-inicio .painel-form { margin: 28px auto 8px; }
+/* O Início da app é o carrossel giratório (css/roda-app.css + js/roda-app.js): a página inicial do site
+   fica escondida (a classe "com-roda" é posta pelo js/roda-app.js quando o carrossel arranca;
+   se ele falhar, aparece o Início do site). O splash cobre o arranque, por isso não se vê a troca. */
+html.app.com-roda #vista-inicio { display: none; }
 /* Sem Google Analytics na app: "Definições de cookies" não faz sentido */
 html.app p:has(> [data-definicoes-cookies]) { display: none; }
 /* No iPad também fica a barra em baixo (o site, no computador, usa uma "pílula" flutuante) */

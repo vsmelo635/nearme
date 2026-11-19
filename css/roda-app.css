@@ -1,0 +1,205 @@
+/* =========================================================
+   App iOS — Início em carrossel giratório (protótipo aprovado: prototipos/v6.1/index.html)
+   Só é carregado dentro da app (js/app-nativa.js). O site nearme.pt não usa este ficheiro.
+   Os valores (tamanhos, cores, tempos) são os do protótipo; o que muda é só a posição,
+   que aqui conta com o notch e com a barra de abas verdadeira do iPhone.
+   ========================================================= */
+:root {
+  --mola: cubic-bezier(.22, 1, .36, 1);
+  /* topo do carrossel: logo abaixo do notch (no protótipo: 46 px) */
+  --roda-topo: calc(max(env(safe-area-inset-top), 12px) + 2px);
+  /* fundo do carrossel: em cima da barra de abas (no protótipo: 88 px) */
+  --roda-base: calc(var(--altura-nav) + env(safe-area-inset-bottom));
+}
+
+/* O Início da app é o carrossel: ocupa o ecrã todo, por cima do fundo animado (js/fundo-mapa.js) */
+.roda {
+  position: fixed; inset: 0; z-index: 1; overflow: hidden;
+  display: none;
+  -webkit-user-select: none; user-select: none;
+}
+body[data-vista="inicio"] .roda { display: block; }
+html, body[data-vista="inicio"] { overscroll-behavior: none; }
+.roda .ic { width: 24px; height: 24px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.roda .ic-sm { width: 18px; height: 18px; }
+.roda button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+.roda h2, .roda p { margin: 0; }
+/* sem contorno de foco ao tocar no carrossel */
+.roda :focus, .roda :focus-visible { outline: none; }
+
+/* ----- topo: logo, lupa e filtros ----- */
+.topo-feed {
+  position: absolute; top: var(--roda-topo); left: 0; right: 0; z-index: 12; padding: 0 14px;
+  display: flex; flex-direction: column; gap: 11px;
+}
+.linha-logo { display: flex; align-items: center; justify-content: space-between; }
+.logotipo { display: flex; align-items: center; gap: 6px; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.logotipo svg { width: 25px; height: 25px; }
+.logotipo span { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.roda .bt-lupa {
+  width: 38px; height: 38px; border-radius: 50%; background: rgba(10,10,11,.5);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: grid; place-items: center; color: #fff;
+}
+.roda-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.roda-chips::-webkit-scrollbar { display: none; }
+.roda .roda-chip {
+  flex: 0 0 auto; height: 34px; padding: 0 15px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: rgba(10,10,11,.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.14);
+  display: inline-flex; align-items: center; transition: background .18s, transform .14s;
+}
+.roda .roda-chip:active { transform: scale(.95); }
+.roda .roda-chip.on { background: var(--laranja); border-color: transparent; }
+
+/* Lupa: mostra a barra de pesquisa da app (o .topo) no lugar do logo */
+html.app body[data-vista="inicio"]:not(.pesquisa-aberta) .topo { display: none; }
+body.pesquisa-aberta .roda .linha-logo { display: none; }
+body.pesquisa-aberta .roda .topo-feed { top: calc(env(safe-area-inset-top) + var(--altura-topo) + 4px); }
+
+/* aviso no meio (a carregar, sem eventos, pesquisa sem resultados) */
+.conta-feed {
+  position: absolute; top: calc(var(--roda-topo) + 92px); left: 50%; transform: translateX(-50%); z-index: 12;
+  max-width: calc(100% - 32px); text-align: center;
+  padding: 7px 14px; border-radius: 999px; background: rgba(10,10,11,.7);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: 12.5px; font-weight: 600; color: var(--texto-2);
+}
+
+/* ----- carrossel giratório ----- */
+.carrossel {
+  position: absolute; left: 0; right: 0;
+  top: calc(var(--roda-topo) + 82px); bottom: calc(var(--roda-base) + 30px);
+  touch-action: none; cursor: grab; overflow: visible;
+  -webkit-tap-highlight-color: transparent;
+}
+.carrossel.agarrado { cursor: grabbing; }
+/* palco 3D: encolhe um pouco em ecrãs baixos (iPhone SE), para os painéis caberem (ver ajustarEscala) */
+.palco3d { position: absolute; inset: 0; perspective: 1000px; perspective-origin: 50% 38%; }
+.pista { position: absolute; inset: 0; transform-style: preserve-3d; transform: translateZ(var(--raio-neg, -260px)) rotateX(-5deg); }
+.pista.tique { animation: tique .11s ease; }
+@keyframes tique {
+  0%   { transform: translateZ(var(--raio-neg)) rotateX(-5deg); }
+  50%  { transform: translateZ(calc(var(--raio-neg) - 14px)) rotateX(-5deg); }
+  100% { transform: translateZ(var(--raio-neg)) rotateX(-5deg); }
+}
+.painel {
+  position: absolute; left: 50%; top: 50%; width: 262px; height: 440px; margin: -220px 0 0 -131px; border-radius: 30px;
+  overflow: hidden; background: #222; will-change: transform, opacity;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07);
+}
+.painel .p-fundo { position: absolute; inset: 0; }
+.painel .p-fundo::after { display: none; } /* a capa do site tem um degradê próprio; aqui usa-se o .p-veu */
+.painel .p-fundo img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; transition: none; }
+.painel .p-veu { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45) 0%, transparent 26%, transparent 42%, rgba(0,0,0,.94) 100%); }
+.painel .p-sombra { position: absolute; inset: 0; background: #0A0A0B; pointer-events: none; opacity: 0; z-index: 6; }
+.painel .p-brilho {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.16) 48%, transparent 62%);
+}
+.painel.centro .p-brilho { animation: reflexo .8s ease .05s; }
+@keyframes reflexo { 0% { opacity: 1; transform: translateX(-70%); } 100% { opacity: 0; transform: translateX(70%); } }
+.p-topo { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 3; display: flex; justify-content: space-between; align-items: center; }
+.p-etq { padding: 5px 11px; border-radius: 999px; background: rgba(255,106,19,.92); font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+.p-dia { min-width: 46px; padding: 6px 7px; border-radius: 14px; background: rgba(10,10,11,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); text-align: center; }
+.p-dia b { display: block; font-size: 18px; font-weight: 800; line-height: 1; }
+.p-dia small { display: block; font-size: 9.5px; font-weight: 800; color: var(--laranja-2); letter-spacing: .07em; margin-top: 2px; }
+.p-base { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 3; }
+.p-base h2 {
+  font-size: 23px; font-weight: 800; line-height: 1.12; letter-spacing: -.025em; text-shadow: 0 2px 12px rgba(0,0,0,.6);
+  /* nomes compridos da planilha: no máximo 3 linhas */
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.p-linha { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #e4e4e8; margin-top: 6px; line-height: 1.3; }
+.p-linha span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-linha .ic { width: 15px; height: 15px; color: var(--laranja-2); }
+.p-preco { margin-top: 7px; font-size: 13px; font-weight: 800; color: var(--laranja-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-accoes { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.roda .p-bt {
+  height: 38px; min-width: 38px; padding: 0 11px; border-radius: 999px; background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 12.5px; font-weight: 700; color: #fff; transition: transform .15s var(--mola), background .15s;
+}
+.roda .p-bt:active { transform: scale(.9); }
+.p-bt .ic { width: 17px; height: 17px; }
+.roda .p-bt.on { color: var(--laranja); border-color: rgba(255,106,19,.5); }
+.p-bt.on .ic { fill: var(--laranja); stroke: var(--laranja); }
+.p-bt.pulsa .ic { animation: bater .45s var(--mola); }
+.roda .p-bt.mapa { margin-left: auto; background: var(--laranja); border-color: transparent; }
+@keyframes bater { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+/* coração dos dois toques */
+.coracao { position: absolute; top: 50%; left: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; z-index: 5; color: var(--laranja); opacity: 0; pointer-events: none; }
+.coracao svg { width: 120px; height: 120px; fill: currentColor; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.coracao.mostra { animation: coracaoPop .9s var(--mola); }
+@keyframes coracaoPop {
+  0%   { opacity: 0; transform: scale(.3) rotate(-12deg); }
+  25%  { opacity: 1; transform: scale(1.15) rotate(6deg); }
+  55%  { opacity: 1; transform: scale(1) rotate(0); }
+  100% { opacity: 0; transform: scale(1.3); }
+}
+
+/* último painel: Novidades / Divulgar */
+.painel.leads {
+  background: radial-gradient(300px 260px at 90% 0%, rgba(255,106,19,.5), transparent 70%),
+              radial-gradient(260px 240px at 0% 100%, rgba(240,74,12,.3), transparent 70%), #151515;
+}
+.leads-p { position: absolute; inset: 0; padding: 22px 18px; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; z-index: 3; }
+.leads-p .logo-l { width: 52px; height: 52px; margin-bottom: auto; }
+.leads-p h2 { font-size: 25px; font-weight: 800; line-height: 1.1; letter-spacing: -.025em; }
+.leads-p p { font-size: 13px; color: #cfcfd4; line-height: 1.45; }
+.roda .bt-enviar {
+  height: 46px; border-radius: 999px; background: var(--laranja); color: #fff; font-size: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform .15s var(--mola);
+}
+.roda .bt-enviar:active { transform: scale(.97); }
+.roda .bt-sec { height: 46px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); font-size: 14px; font-weight: 700; }
+
+/* rodapé do carrossel: barrinhas e dica */
+.rodape-car { position: absolute; left: 0; right: 0; bottom: calc(var(--roda-base) + 10px); z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.barras { display: flex; gap: 5px; min-height: 6px; align-items: center; }
+.barras i { display: block; width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); transition: width .3s var(--mola), background .3s; }
+.barras i.on { width: 20px; background: var(--laranja); }
+.barras .barras-num { font-size: 11.5px; font-weight: 700; color: #a3a3a3; font-variant-numeric: tabular-nums; }
+.dica-car { font-size: 11.5px; color: #7a7a82; display: flex; align-items: center; gap: 6px; }
+.dica-car .ic { width: 14px; height: 14px; }
+
+/* "vibração" do ecrã: tremida muito leve (menos de 1 px) */
+.roda.vibra { animation: vibra .13s linear; }
+@keyframes vibra { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-.8px, 0); } 50% { transform: translate(.8px, 0); } 75% { transform: translate(-.4px, 0); } }
+
+/* ----- folha dos formulários (Novidades / Divulgar), criada em js/app.js → prepararApp ----- */
+.leads-fundo {
+  position: fixed; inset: 0; z-index: 1900; background: rgba(0,0,0,.55);
+  opacity: 0; visibility: hidden; transition: opacity .3s, visibility .3s;
+}
+.leads-fundo.on { opacity: 1; visibility: visible; }
+.leads-folha {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1910;
+  max-height: calc(100% - env(safe-area-inset-top) - 16px); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--fundo); border-radius: 26px 26px 0 0; border-top: 1px solid var(--borda);
+  padding: 40px 18px calc(30px + env(safe-area-inset-bottom));
+  transform: translateY(105%); visibility: hidden;
+  transition: transform .42s var(--mola), visibility .42s;
+  box-shadow: 0 -16px 40px rgba(0,0,0,.6);
+}
+.leads-folha.on { transform: translateY(0); visibility: visible; }
+/* pega de fechar: área de toque de 44 px (o risco visível é pequeno, como no protótipo) */
+.leads-puxar { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 44px; border: 0; background: none; padding: 0; }
+.leads-puxar::before { content: ""; position: absolute; top: 9px; left: 40px; width: 40px; height: 4px; border-radius: 3px; background: rgba(255,255,255,.22); }
+.leads-seg {
+  display: grid; grid-template-columns: 1fr 1fr; padding: 4px; margin-bottom: 14px; border-radius: 999px;
+  background: var(--superficie); border: 1px solid var(--borda);
+}
+.leads-seg button { height: 36px; border: 0; border-radius: 999px; background: none; font-size: 13.5px; font-weight: 700; color: var(--texto-2); transition: background .2s, color .2s; }
+.leads-seg button.on { background: var(--laranja); color: #fff; }
+.leads-folha .painel-form { margin: 0; padding: 0; background: none; border: 0; box-shadow: none; max-width: none; }
+.leads-folha .painel-form h1 { font-size: 1.45rem; }
+.leads-folha .painel-form > p { margin-bottom: 16px; }
+
+/* Ecrãs muito baixos (iPhone SE de 1.ª geração, 568 px): sem a dica "Arrasta para o lado", para não tapar o painel */
+@media (max-height: 620px) {
+  .dica-car { display: none; }
+}

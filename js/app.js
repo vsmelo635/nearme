@@ -83,6 +83,7 @@ let eventoParaFocar = null;
 let eventoPendente = '';   // evento pedido pelo link (#evento=...) antes de os eventos carregarem
 let hashAntesDoEvento = ''; // para onde o endereço volta ao fechar o evento
 let veioDaReserva = false; // true = a planilha falhou e estamos a usar o eventos.json
+let eventosProntos = false; // true = já se tentou carregar a planilha (com ou sem sucesso)
 // true = está a correr dentro da app iOS (a classe "app" é posta por js/app-nativa.js, no <head>)
 const NA_APP = document.documentElement.classList.contains('app');
 
@@ -295,6 +296,7 @@ async function carregarEventos() {
     console.error('Não foi possível carregar os eventos:', erro);
     console.info('Dica: abra o site com o Live Server do VS Code (não dê duplo clique no index.html).');
   }
+  eventosProntos = true;
 }
 
 /* ---------- 5. FILTROS ---------- */
@@ -996,11 +998,14 @@ function renderGuardados() {
         <p>Abre um evento e toca em “Guardar” para o encontrares aqui.</p>
         <a href="#inicio" class="botao botao-sec">Explorar eventos</a>
       </div>`;
+  window.RodaApp?.marcarEstados(); // botão "Guardar" dos painéis do Início (js/roda-app.js)
 }
 
 /* Prepara a página para a app (só corre dentro da app; o site fica como está):
    - barra de abas com Início, Mapa e Guardados (como no protótipo);
-   - os formulários de Novidades e Divulgar passam para o fim do Início;
+   - o Início é o carrossel giratório (js/roda-app.js, protótipo v6.1);
+   - os formulários de Novidades e Divulgar passam para uma folha que sobe de baixo
+     (abre-se no último painel do carrossel ou com os links #novidades / #divulgar);
    - na Política de Privacidade, explica o que muda na app (sem Google Analytics). */
 function prepararApp() {
   const nav = document.querySelector('.nav-baixo');
@@ -1024,19 +1029,52 @@ function prepararApp() {
       <div class="lista-guardados" id="lista-guardados"></div>
     </section>`);
 
-  // Formulários de leads no fim do Início (a chamada "Quero receber" deixa de ser precisa: o formulário está logo ali)
-  const inicio = document.getElementById('vista-inicio');
-  inicio.querySelector('.cta')?.remove();
-  const rodape = inicio.querySelector('.rodape');
+  // Folha dos formulários de leads. Os formulários são os mesmos do site (mudam só de sítio):
+  // todos os campos, o consentimento e o envio para o Apps Script continuam iguais.
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="leads-fundo" id="leads-fundo" data-fechar-leads></div>
+    <section class="leads-folha" id="leads-folha" role="dialog" aria-modal="true" aria-label="Novidades e divulgação" aria-hidden="true">
+      <button type="button" class="leads-puxar" data-fechar-leads aria-label="Fechar"></button>
+      <div class="leads-seg" role="tablist">
+        <button type="button" role="tab" data-leads="novidades">Novidades</button>
+        <button type="button" role="tab" data-leads="divulgar">Divulgar evento</button>
+      </div>
+    </section>`);
+  const folhaLeads = document.getElementById('leads-folha');
   ['novidades', 'divulgar'].forEach(nome => {
     const painel = document.querySelector(`#vista-${nome} .painel-form`);
     painel.id = 'app-' + nome;
-    rodape.before(painel);
+    folhaLeads.append(painel);
   });
 
   const titulo = [...document.querySelectorAll('#vista-privacidade h2')].find(h => h.textContent.includes('Cookies'));
   titulo?.insertAdjacentHTML('afterend',
     '<p><strong>Na app.</strong> A app do Nearme não usa o Google Analytics nem cookies de estatística. Os eventos que guardas ficam só no teu telemóvel: não os recebemos.</p>');
+}
+
+// Abre a folha dos formulários (só na app) no separador pedido: 'novidades' ou 'divulgar'
+function abrirLeads(nome) {
+  const folhaLeads = document.getElementById('leads-folha');
+  if (!folhaLeads) return;
+  folhaLeads.querySelectorAll('[data-leads]').forEach(b => {
+    const on = b.dataset.leads === nome;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  folhaLeads.querySelectorAll('.painel-form').forEach(p => { p.hidden = p.id !== 'app-' + nome; });
+  folhaLeads.scrollTop = 0;
+  folhaLeads.classList.add('on');
+  folhaLeads.setAttribute('aria-hidden', 'false');
+  document.getElementById('leads-fundo').classList.add('on');
+}
+
+function fecharLeads() {
+  const folhaLeads = document.getElementById('leads-folha');
+  if (!folhaLeads?.classList.contains('on')) return;
+  document.activeElement?.blur(); // esconde o teclado do iPhone
+  folhaLeads.classList.remove('on');
+  folhaLeads.setAttribute('aria-hidden', 'true');
+  document.getElementById('leads-fundo').classList.remove('on');
 }
 
 /* ---------- 9. NAVEGAÇÃO ENTRE "PÁGINAS" (#inicio, #mapa…) ---------- */
@@ -1055,15 +1093,16 @@ function mostrarVista() {
     return;
   }
   if (!folha.hidden) fecharEvento(false); // o endereço mudou com um evento aberto: fecha-o
+  if (NA_APP) fecharLeads();
 
   const pedida = location.hash.slice(1);
   let vista = VISTAS.includes(pedida) ? pedida : 'inicio';
-  // na app, Novidades e Divulgar estão no fim do Início: abre o Início e desce até ao formulário
-  let formulario = null;
+  // na app, Novidades e Divulgar abrem numa folha por cima do Início
+  let formulario = '';
   if (NA_APP && (vista === 'novidades' || vista === 'divulgar')) {
-    formulario = document.getElementById('app-' + vista);
+    formulario = vista;
     vista = 'inicio';
-    trocarHash('#inicio'); // assim, tocar outra vez no mesmo link volta a descer até ao formulário
+    trocarHash('#inicio'); // assim, tocar outra vez no mesmo link volta a abrir a folha
   }
 
   document.querySelectorAll('.vista').forEach(s => s.classList.toggle('ativa', s.id === 'vista-' + vista));
@@ -1074,7 +1113,7 @@ function mostrarVista() {
   });
   document.body.dataset.vista = vista;
   window.scrollTo(0, 0);
-  formulario?.scrollIntoView({ block: 'start' });
+  if (formulario) abrirLeads(formulario);
 
   if (vista === 'mapa') abrirMapa();
   if (vista === 'guardados') renderGuardados();
@@ -1089,6 +1128,7 @@ function atualizar() {
   renderLista();
   desenharMarcadores();
   renderGuardados();
+  window.RodaApp?.atualizar(); // carrossel do Início da app (js/roda-app.js)
 }
 
 /* ---------- 11. FORMULÁRIOS (leads) ---------- */
@@ -1227,6 +1267,11 @@ document.addEventListener('click', ev => {
     return;
   }
 
+  // Folha dos formulários (só na app): trocar de separador ou fechar
+  const separador = ev.target.closest('[data-leads]');
+  if (separador) { abrirLeads(separador.dataset.leads); return; }
+  if (ev.target.closest('[data-fechar-leads]')) { fecharLeads(); return; }
+
   const alvo = ev.target.closest('[data-guardar], [data-copiar], [data-partilhar], [data-id], [data-categoria], [data-quando], [data-cidade-valor], [data-limpar], [data-fechar], [data-ver-mapa], [data-pagina], .input-data');
   if (!alvo) return;
 
@@ -1306,6 +1351,7 @@ document.addEventListener('change', ev => {
 
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && !folha.hidden) fecharEvento();
+  if (ev.key === 'Escape' && NA_APP) fecharLeads();
   if (ev.key === 'Escape') fecharMenus();
 });
 
