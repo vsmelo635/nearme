@@ -23,6 +23,7 @@
     coracao: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z"/>',
     guardar: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
     mapa: '<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    partilhar: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
   };
   const ic = (d, cls = 'ic') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 
@@ -174,6 +175,7 @@
         '<div class="p-accoes">' +
           `<button type="button" class="p-bt" data-r-gosto aria-pressed="false" aria-label="Gosto">${ic(SVG.coracao)}</button>` +
           `<button type="button" class="p-bt" data-r-guardar aria-pressed="false" aria-label="Guardar">${ic(SVG.guardar)}</button>` +
+          `<button type="button" class="p-bt" data-r-partilhar aria-label="Partilhar">${ic(SVG.partilhar)}</button>` +
           `<button type="button" class="p-bt mapa" data-r-mapa>${ic(SVG.mapa)}Mapa</button>` +
         '</div></div>' +
       `<div class="coracao"><svg viewBox="0 0 24 24" aria-hidden="true">${SVG.coracao}</svg></div><div class="p-sombra"></div>`);
@@ -190,6 +192,8 @@
     bG.addEventListener('click', ev => { ev.stopPropagation(); if (eCentro(d)) alternarGosto(e.id, bG, true); });
     const bS = d.querySelector('[data-r-guardar]');
     bS.addEventListener('click', ev => { ev.stopPropagation(); if (eCentro(d)) alternarGuardadoRoda(e.id, bS); });
+    const bP = d.querySelector('[data-r-partilhar]');
+    bP.addEventListener('click', ev => { ev.stopPropagation(); if (eCentro(d)) { pulsar(bP); partilharEvento(e.id); } });
     d.querySelector('[data-r-mapa]').addEventListener('click', ev => {
       ev.stopPropagation();
       if (!eCentro(d)) return;

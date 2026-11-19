@@ -60,6 +60,7 @@ const ICONES = {
   certo: '<path d="M20 6 9 17l-5-5"/>',
   partilhar: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
   guardar: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  sino: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
 };
 
 function icone(nome, classe = '') {
@@ -219,6 +220,12 @@ async function obterDados() {
     }
   }
   veioDaReserva = true;
+  // Na app, sem rede: usa a última lista da planilha guardada no telemóvel (é mais recente que o
+  // eventos.json, que fica como último recurso). Só serve se ainda tiver eventos por acontecer.
+  if (NA_APP) {
+    const copia = lerCache();
+    if (copia && prepararEventos(copia).length) return copia;
+  }
   const resposta = await fetch(CONFIG.EVENTOS_URL, { cache: 'no-cache' });
   if (!resposta.ok) throw new Error('HTTP ' + resposta.status);
   return resposta.json();
@@ -763,8 +770,8 @@ let idEventoAberto = ''; // evento que está no painel agora ('' = painel fechad
 let promessaPaginas = null;
 function paginasDosEventos() {
   if (!promessaPaginas) {
-    // na app iOS as páginas dos eventos não vão dentro da app: não há link a mostrar
-    if (document.documentElement.classList.contains('app')) return (promessaPaginas = Promise.resolve({}));
+    // na app iOS as páginas dos eventos não vão dentro da app: pede a lista ao site (para partilhar o link)
+    if (NA_APP) return (promessaPaginas = paginasDoSiteNaApp());
     promessaPaginas = fetch('/eventos/paginas.json', { cache: 'no-cache' })
       .then(r => (r.ok ? r.json() : {}))
       .catch(() => ({}));
@@ -772,9 +779,37 @@ function paginasDosEventos() {
   return promessaPaginas;
 }
 
+// Na app, a lista vem de www.nearme.pt pelo CapacitorHttp (pedido feito pelo iPhone, sem o bloqueio
+// de CORS que um fetch normal teria). Se falhar (ex.: sem rede), tenta outra vez da próxima.
+async function paginasDoSiteNaApp() {
+  try {
+    const http = window.Capacitor?.Plugins?.CapacitorHttp;
+    if (!http) throw new Error('CapacitorHttp em falta');
+    const r = await http.get({ url: 'https://www.nearme.pt/eventos/paginas.json', connectTimeout: 4000, readTimeout: 4000 });
+    if (r.status !== 200) throw new Error('HTTP ' + r.status);
+    const dados = typeof r.data === 'string' ? JSON.parse(r.data) : r.data;
+    return dados && typeof dados === 'object' ? dados : {};
+  } catch (erro) {
+    console.warn('Não consegui ler as páginas dos eventos:', erro);
+    promessaPaginas = null;
+    return {};
+  }
+}
+
+// Página própria do evento em www.nearme.pt (se existir), senão o link #evento=... do site
+async function linkParaPartilhar(e) {
+  const paginas = await paginasDosEventos();
+  const info = paginas && Object.prototype.hasOwnProperty.call(paginas, e.id) ? paginas[e.id] : null;
+  if (info && info.nome === String(e.nome || '').trim() && typeof info.pagina === 'string' && /^[a-z0-9-]+$/.test(info.pagina)) {
+    return `https://www.nearme.pt/eventos/${info.pagina}.html`;
+  }
+  return linkDoEvento(e.id);
+}
+
 // Põe o link no painel se este evento tiver página. O id E o nome têm de bater certo:
 // os ids "linha-N" (linhas sem id na planilha) mudam quando alguém apaga uma linha.
 async function mostrarLinkDaPagina(e) {
+  if (NA_APP) return; // na app a página abriria fora da app; o link vai só na partilha
   const paginas = await paginasDosEventos();
   const info = paginas && Object.prototype.hasOwnProperty.call(paginas, e.id) ? paginas[e.id] : null;
   if (!info || info.nome !== String(e.nome || '').trim()) return;
@@ -849,6 +884,18 @@ function avisar(texto) {
 async function partilharEvento(id) {
   const e = eventos.find(x => x.id === String(id));
   if (!e) return;
+  // Na app: folha de partilha do iPhone (@capacitor/share) com nome, data e link da página do evento
+  const partilha = NA_APP && window.Capacitor?.Plugins?.Share;
+  if (partilha) {
+    const link = await linkParaPartilhar(e);
+    try {
+      await partilha.share({ title: e.nome, text: `${e.nome} · ${textoData(e)}`, url: link, dialogTitle: 'Partilhar evento' });
+    } catch (erro) {
+      if (/cancel/i.test(String(erro?.message || erro))) return; // a pessoa fechou a folha
+      avisar((await copiarTexto(link)) ? 'Link copiado!' : 'Não foi possível copiar o link.');
+    }
+    return;
+  }
   const url = linkDoEvento(e.id);
   if (navigator.share) {
     try {
@@ -912,9 +959,9 @@ function abrirEvento(id) {
       </ul>
       ${e.descricao ? `<p class="descricao">${esc(e.descricao)}</p>` : ''}
       <div class="acoes">
-        <a class="botao" href="${comoChegar}" target="_blank" rel="noopener">${icone('navegar')} Como chegar</a>
+        <a class="botao" href="${comoChegar}" target="_blank" rel="noopener" data-como-chegar="${e.lat},${e.lng}">${icone('navegar')} Como chegar</a>
         ${link ? `<a class="botao botao-sec" href="${esc(link)}" target="_blank" rel="noopener">${icone('externo')} Bilhetes / mais info</a>` : ''}
-        ${NA_APP ? botaoGuardar(e.id) : ''}
+        ${NA_APP ? botaoGuardar(e.id) + botaoLembrete(e) : ''}
         <button type="button" class="botao botao-texto" data-ver-mapa="${esc(e.id)}">${icone('mapa')} Ver no mapa</button>
         <button type="button" class="botao botao-texto" data-partilhar="${esc(e.id)}">${icone('partilhar')} Partilhar</button>
       </div>
@@ -1001,6 +1048,115 @@ function renderGuardados() {
   window.RodaApp?.marcarEstados(); // botão "Guardar" dos painéis do Início (js/roda-app.js)
 }
 
+/* ---------- 8c. FUNÇÕES DO IPHONE (só na app) ---------- */
+
+// Como chegar: abre o Apple Maps. Se a app não sair para o Maps em 1,5 s, abre o Google Maps no navegador.
+function abrirComoChegar(link) {
+  const [lat, lng] = link.dataset.comoChegar.split(',').map(Number);
+  if (!isFinite(lat) || !isFinite(lng)) { window.open(link.href, '_blank'); return; }
+  let saiu = false;
+  const aoEsconder = () => { if (document.hidden) saiu = true; };
+  document.addEventListener('visibilitychange', aoEsconder);
+  location.href = `maps://?daddr=${lat},${lng}`;
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', aoEsconder);
+    if (!saiu && !document.hidden) window.open(link.href, '_blank');
+  }, 1500);
+}
+
+// Lembretes: notificação local 2 horas antes do início (@capacitor/local-notifications).
+// Ficam guardados no telemóvel: { idDoEvento: { nid: número da notificação, em: quando toca } }
+const CHAVE_LEMBRETES = 'nearme-lembretes-v1';
+const DUAS_HORAS = 2 * 36e5;
+
+function lerLembretes() {
+  try {
+    const l = JSON.parse(localStorage.getItem(CHAVE_LEMBRETES));
+    return l && typeof l === 'object' && !Array.isArray(l) ? l : {};
+  } catch (_) { return {}; }
+}
+function gravarLembretes(l) {
+  try { localStorage.setItem(CHAVE_LEMBRETES, JSON.stringify(l)); } catch (_) { /* sem espaço */ }
+}
+function lembreteAtivo(id) { const l = lerLembretes()[id]; return !!l && l.em > Date.now(); }
+
+// número fixo para cada evento (o iPhone identifica as notificações por um número)
+function idNotificacao(id) {
+  let h = 7;
+  for (const c of String(id)) h = (h * 31 + c.codePointAt(0)) | 0;
+  return (Math.abs(h) % 2000000000) + 1;
+}
+
+function botaoLembrete(e) {
+  const ativo = lembreteAtivo(e.id);
+  return `<button type="button" class="botao botao-sec botao-lembrete${ativo ? ' ativo' : ''}" data-lembrete="${esc(e.id)}" aria-pressed="${ativo}">
+          ${icone('sino')}<span>${ativo ? 'Lembrete ativo' : 'Lembrar-me'}</span>
+        </button>`;
+}
+
+async function alternarLembrete(botao) {
+  const notif = window.Capacitor?.Plugins?.LocalNotifications;
+  const e = eventos.find(x => x.id === botao.dataset.lembrete);
+  if (!notif || !e) return;
+  const marcar = ativo => {
+    botao.classList.toggle('ativo', ativo);
+    botao.setAttribute('aria-pressed', String(ativo));
+    botao.querySelector('span').textContent = ativo ? 'Lembrete ativo' : 'Lembrar-me';
+  };
+  const lista = lerLembretes();
+  try {
+    if (lembreteAtivo(e.id)) {
+      await notif.cancel({ notifications: [{ id: lista[e.id].nid }] });
+      delete lista[e.id];
+      gravarLembretes(lista);
+      marcar(false);
+      avisar('Lembrete cancelado.');
+      return;
+    }
+    const quando = new Date(e.inicio.getTime() - DUAS_HORAS);
+    if (quando <= new Date()) {
+      avisar(e.inicio > new Date() ? 'Faltam menos de 2 horas.' : 'Este evento já começou.');
+      return;
+    }
+    // só agora (quando a pessoa toca no botão) é que se pede autorização
+    let permissao = await notif.checkPermissions();
+    if (permissao.display !== 'granted' && permissao.display !== 'denied') permissao = await notif.requestPermissions();
+    if (permissao.display !== 'granted') { avisar('Ativa as notificações nas Definições.'); return; }
+    const nid = idNotificacao(e.id);
+    await notif.schedule({ notifications: [{
+      id: nid,
+      title: `Daqui a 2 horas: ${e.nome}`,
+      body: `Começa às ${fmtHora.format(e.inicio)} · ${[e.local_nome, e.cidade].filter(Boolean).join(', ')}`,
+      schedule: { at: quando, allowWhileIdle: true },
+      extra: { evento: e.id },
+    }] });
+    lista[e.id] = { nid, em: quando.getTime() };
+    gravarLembretes(lista);
+    marcar(true);
+    avisar('Vamos lembrar-te 2 horas antes.');
+  } catch (erro) {
+    console.warn('Lembrete:', erro);
+    avisar('Não foi possível criar o lembrete.');
+  }
+}
+
+// Aviso discreto quando a app está sem rede e mostra a lista guardada
+function mostrarSemLigacao() {
+  const sem = NA_APP && veioDaReserva && !!CONFIG.PLANILHA_CSV_URL && eventos.length > 0;
+  document.body.classList.toggle('sem-ligacao', sem);
+  const el = document.getElementById('aviso-sem-ligacao');
+  if (el) el.hidden = !sem;
+}
+
+// Voltou a rede: vai buscar a lista nova da planilha
+async function aoVoltarARede() {
+  if (!veioDaReserva) return;
+  await carregarEventos();
+  renderHero();
+  atualizar();
+  mostrarSemLigacao();
+}
+
 /* Prepara a página para a app (só corre dentro da app; o site fica como está):
    - barra de abas com Início, Mapa e Guardados (como no protótipo);
    - o Início é o carrossel giratório (js/roda-app.js, protótipo v6.1);
@@ -1045,6 +1201,17 @@ function prepararApp() {
     const painel = document.querySelector(`#vista-${nome} .painel-form`);
     painel.id = 'app-' + nome;
     folhaLeads.append(painel);
+  });
+
+  document.body.insertAdjacentHTML('beforeend',
+    '<div class="aviso-sem-ligacao" id="aviso-sem-ligacao" role="status" hidden>Sem ligação: a mostrar eventos guardados</div>');
+
+  // tocar na notificação do lembrete abre o evento
+  window.Capacitor?.Plugins?.LocalNotifications?.addListener('localNotificationActionPerformed', acao => {
+    const id = acao?.notification?.extra?.evento;
+    if (!id) return;
+    eventoPendente = String(id);
+    abrirEventoPendente();
   });
 
   const titulo = [...document.querySelectorAll('#vista-privacidade h2')].find(h => h.textContent.includes('Cookies'));
@@ -1267,6 +1434,12 @@ document.addEventListener('click', ev => {
     return;
   }
 
+  // Funções do iPhone (só na app): Como chegar no Apple Maps e lembrete
+  const chegar = ev.target.closest('[data-como-chegar]');
+  if (chegar && NA_APP) { ev.preventDefault(); abrirComoChegar(chegar); return; }
+  const lembrete = ev.target.closest('[data-lembrete]');
+  if (lembrete && NA_APP) { alternarLembrete(lembrete); return; }
+
   // Folha dos formulários (só na app): trocar de separador ou fechar
   const separador = ev.target.closest('[data-leads]');
   if (separador) { abrirLeads(separador.dataset.leads); return; }
@@ -1402,6 +1575,10 @@ async function iniciar() {
   atualizar();
   if (copia) { pagina = paginaAntes; renderLista(); }
   abrirEventoPendente(true);
+  if (NA_APP) {
+    mostrarSemLigacao();
+    window.addEventListener('online', aoVoltarARede);
+  }
 
   // leads que ficaram por enviar numa visita anterior
   reenviarLeadsPendentes();
