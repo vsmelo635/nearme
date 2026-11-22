@@ -769,6 +769,9 @@ html.app .menu-filtro + .menu-filtro .menu-botao:hover { background: rgba(44, 44
 .lista-guardados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 @media (min-width: 700px) { .lista-guardados { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .lista-guardados .vazio p + p { margin-top: 6px; font-size: 0.9rem; }
+/* Rodapé da aba Guardados: o link para a Política de Privacidade tem de estar sempre à mão na app */
+.rodape-app { margin: 28px 0 8px; text-align: center; font-size: 0.85rem; color: var(--texto-2); }
+.rodape-app a { color: inherit; text-decoration: underline; }
 
 /* Botão "Guardar" no detalhe do evento (fica laranja e preenchido quando está guardado) */
 .botao-guardar.guardado { color: var(--laranja); }

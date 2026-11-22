@@ -1,7 +1,7 @@
 // Copia os ficheiros do site para a pasta www/, que é a que vai DENTRO da app iOS.
 // Usa-se com "npm run app" (copia + "npx cap sync ios"). Corre sempre que o site mudar.
 //
-// O que vai para a app: index.html, css/, js/, img/, fonts/ e data/eventos.json
+// O que vai para a app: index.html, css/, js/, img/, fonts/, data/eventos.json e o Leaflet (vendor/leaflet/)
 // (o eventos.json é a reserva para quando não há internet; com internet a app lê a planilha).
 // Só vão estas pastas: a pasta prototipos/ (referência dos protótipos) nunca entra na app.
 
@@ -26,6 +26,25 @@ for (const pasta of PASTAS) {
   });
 }
 fs.copyFileSync(path.join(RAIZ, 'data', 'eventos.json'), path.join(DESTINO, 'data', 'eventos.json'));
+
+// Leaflet (o mapa) vai DENTRO da app, para o Mapa abrir sem internet e sem depender do unpkg.com.
+// Vem do node_modules/ (npm install); são exatamente os mesmos ficheiros que o site usa do unpkg.com.
+const LEAFLET_DESTINO = path.join(DESTINO, 'vendor', 'leaflet');
+const LEAFLET_FICHEIROS = [
+  ['leaflet/dist/leaflet.css', 'leaflet.css'],
+  ['leaflet/dist/leaflet.js', 'leaflet.js'],
+  ['leaflet/dist/images', 'images'],
+  ['leaflet.markercluster/dist/MarkerCluster.css', 'MarkerCluster.css'],
+  ['leaflet.markercluster/dist/leaflet.markercluster.js', 'leaflet.markercluster.js'],
+];
+for (const [origem, destino] of LEAFLET_FICHEIROS) {
+  const de = path.join(RAIZ, 'node_modules', origem);
+  if (!fs.existsSync(de)) {
+    console.error(`Falta ${origem}. Corre primeiro "npm install".`);
+    process.exit(1);
+  }
+  fs.cpSync(de, path.join(LEAFLET_DESTINO, destino), { recursive: true });
+}
 
 // index.html: tira o Vercel Web Analytics, que só existe no site publicado (na app daria erro 404)
 let html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');

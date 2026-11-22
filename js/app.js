@@ -624,6 +624,14 @@ const LEAFLET = {
   grupoJs: 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
   grupoJsHash: 'sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr',
 };
+// Na app iOS o Leaflet vai dentro da app (scripts/app-copiar.js → www/vendor/leaflet/): o Mapa abre
+// mesmo sem internet. São os mesmos ficheiros, por isso as "impressões digitais" (hash) continuam iguais.
+if (NA_APP) {
+  LEAFLET.css = 'vendor/leaflet/leaflet.css';
+  LEAFLET.js = 'vendor/leaflet/leaflet.js';
+  LEAFLET.grupoCss = 'vendor/leaflet/MarkerCluster.css';
+  LEAFLET.grupoJs = 'vendor/leaflet/leaflet.markercluster.js';
+}
 let promessaLeaflet = null;
 
 // Acrescenta um <link> de CSS ou um <script> à página e espera que carregue
@@ -1189,6 +1197,7 @@ function prepararApp() {
     <section id="vista-guardados" class="vista" aria-label="Eventos guardados">
       <div class="secao-titulo"><h2>Guardados <span class="contador" id="contador-guardados"></span></h2></div>
       <div class="lista-guardados" id="lista-guardados"></div>
+      <p class="rodape-app"><a href="#privacidade">Política de Privacidade</a> · <a href="mailto:vsmelo412@gmail.com">Contacto</a></p>
     </section>`);
 
   // Folha dos formulários de leads. Os formulários são os mesmos do site (mudam só de sítio):
@@ -1222,7 +1231,7 @@ function prepararApp() {
 
   const titulo = [...document.querySelectorAll('#vista-privacidade h2')].find(h => h.textContent.includes('Cookies'));
   titulo?.insertAdjacentHTML('afterend',
-    '<p><strong>Na app.</strong> A app do Nearme não usa o Google Analytics nem cookies de estatística. Os eventos que guardas ficam só no teu telemóvel: não os recebemos.</p>');
+    '<p><strong>Na app.</strong> A app do Nearme não usa o Google Analytics nem cookies de estatística, não tem contas e não te segue entre apps. Os eventos que guardas e os lembretes ficam só no teu telemóvel: não os recebemos. Política completa da app em <strong>www.nearme.pt/privacidade.html</strong>.</p>');
 }
 
 // Abre a folha dos formulários (só na app) no separador pedido: 'novidades' ou 'divulgar'
